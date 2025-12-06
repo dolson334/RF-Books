@@ -1,0 +1,148 @@
+<div class="recon-container resort-theme">
+  <header class="header">
+    <div>
+      <h1 class="title">RF Books · Reconciliation Center</h1>
+      <p class="subtitle">
+        Reconcile campground and resort payments with your bank transactions.
+      </p>
+    </div>
+  </header>
+
+  <section class="card filters">
+    <div class="row">
+      <div class="field">
+        <label for="from">From</label>
+        <input
+          id="from"
+          type="datetime-local"
+          [(ngModel)]="from()"
+          (ngModelChange)="from.set($event)"
+          name="from"
+        />
+      </div>
+
+      <div class="field">
+        <label for="to">To</label>
+        <input
+          id="to"
+          type="datetime-local"
+          [(ngModel)]="to()"
+          (ngModelChange)="to.set($event)"
+          name="to"
+        />
+      </div>
+
+      <div class="actions">
+        <button class="btn secondary" type="button" (click)="loadPayments()">
+          Load Payments
+        </button>
+        <button class="btn primary" type="button" (click)="runReconciliation()">
+          Run Reconciliation
+        </button>
+      </div>
+    </div>
+
+    <div class="summary-row" *ngIf="matches().length">
+      <div class="chip">
+        Matched: <strong>{{ matchedCount() }}</strong>
+      </div>
+      <div class="chip">
+        Multiple matches: <strong>{{ multipleMatchCount() }}</strong>
+      </div>
+      <div class="chip warn">
+        Needs review: <strong>{{ unmatchedCount() }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <div *ngIf="isLoading()" class="loading-overlay">
+    <div class="loader"></div>
+  </div>
+
+  <main class="grid">
+    <section class="card">
+      <h2>Guest Payments</h2>
+
+      <table *ngIf="payments().length; else noPayments">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Guest</th>
+            <th>Reservation</th>
+            <th>Amount</th>
+            <th>Method</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of payments()">
+            <td>{{ p.paymentDate | date: 'short' }}</td>
+            <td>{{ p.guestName || '—' }}</td>
+            <td>{{ p.reservationId || '—' }}</td>
+            <td>{{ p.amount | number: '1.2-2' }} {{ p.currency }}</td>
+            <td>{{ p.method || '—' }}</td>
+            <td>
+              <span [class.badge-success]="p.reconciled" [class.badge-warning]="!p.reconciled">
+                {{ p.reconciled ? 'Reconciled' : 'Pending' }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <ng-template #noPayments>
+        <p class="empty">No payments in this window yet. Click "Load Payments".</p>
+      </ng-template>
+    </section>
+
+    <section class="card">
+      <h2>Reconciliation Results</h2>
+
+      <table *ngIf="matches().length; else noMatches">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Payment</th>
+            <th>Bank Transaction</th>
+            <th>Diff</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of matches()">
+            <td>{{ m.createdAt | date: 'short' }}</td>
+            <td>
+              <span class="badge" [ngClass]="badgeClass(m.status)">
+                {{ m.status }}
+              </span>
+            </td>
+            <td>
+              <div *ngIf="m.payment; else noPayment">
+                {{ m.payment?.paymentDate | date: 'shortDate' }} ·
+                {{ m.payment?.amount | number: '1.2-2' }} {{ m.payment?.currency }}<br />
+                {{ m.payment?.guestName || '—' }} / {{ m.payment?.reservationId || '—' }}
+              </div>
+              <ng-template #noPayment>—</ng-template>
+            </td>
+            <td>
+              <div *ngIf="m.bankTransaction; else noBank">
+                {{ m.bankTransaction?.transactionDate | date: 'shortDate' }} ·
+                {{ m.bankTransaction?.amount | number: '1.2-2' }}
+                {{ m.bankTransaction?.currency }}<br />
+                {{ m.bankTransaction?.description || '—' }}
+              </div>
+              <ng-template #noBank>—</ng-template>
+            </td>
+            <td>{{ m.differenceAmount | number: '1.2-2' }}</td>
+            <td>{{ m.reason || '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <ng-template #noMatches>
+        <p class="empty">Run reconciliation to see results for this window.</p>
+      </ng-template>
+    </section>
+  </main>
+</div>
