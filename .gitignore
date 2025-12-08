@@ -1,2 +1,3 @@
-/node_modules
-/.angular
+/backend/.idea
+/backend/.gradle
+/backend/build

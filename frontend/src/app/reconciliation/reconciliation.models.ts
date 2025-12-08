@@ -1,4 +1,5 @@
 export type CurrencyCode = string;
+export type DataSource = 'rfbooks' | 'plaid';
 
 export interface Payment {
   id: number;
@@ -11,6 +12,7 @@ export interface Payment {
   guestName?: string | null;
   reservationId?: string | null;
   reconciled: boolean;
+  source: DataSource;
 }
 
 export type ReconciliationStatus =
@@ -25,6 +27,18 @@ export interface BankTransactionSummary {
   currency: CurrencyCode;
   transactionDate: string;
   description?: string | null;
+  source: DataSource;
+}
+
+export interface PlaidTransaction {
+  transactionId: string;
+  accountId: string;
+  amount: number;
+  date: string;
+  name: string;
+  merchantName?: string;
+  category?: string[];
+  pending: boolean;
 }
 
 export interface ReconciliationMatch {

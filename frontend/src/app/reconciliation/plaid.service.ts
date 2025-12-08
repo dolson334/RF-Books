@@ -15,7 +15,7 @@ export interface ExchangePublicTokenRequest {
   providedIn: 'root',
 })
 export class PlaidService {
-  private readonly baseUrl = '/api/plaid';
+  private readonly baseUrl = 'http://localhost:8080/api/plaid';
 
   constructor(private http: HttpClient) {}
 
