@@ -7,8 +7,6 @@ import { MOCK_PAYMENTS, MOCK_MATCHES } from './reconciliation.mock-data';
   providedIn: 'root',
 })
 export class ReconciliationService {
-  constructor() {}
-
   getPayments(from?: string, to?: string): Observable<Payment[]> {
     return of(MOCK_PAYMENTS);
   }

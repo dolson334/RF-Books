@@ -1,10 +1,6 @@
 .recon-container {
   --primary: #1e688b;
   --primary-dark: #12475f;
-  --secondary-bg: #f2e9d8;
-  --accent: #ffc857;
-  --success-bg: #d1fae5;
-  --success-text: #065f46;
   --warn-bg: #fef3c7;
   --warn-text: #92400e;
   --radius: 14px;
@@ -271,3 +267,17 @@ tbody tr:last-child {
     margin-left: 0;
   }
 }
+
+.bank-banner {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+}
+

@@ -5,7 +5,7 @@ export interface Payment {
   externalId: string;
   amount: number;
   currency: CurrencyCode;
-  paymentDate: string; // ISO string
+  paymentDate: string;
   method?: string | null;
   last4?: string | null;
   guestName?: string | null;

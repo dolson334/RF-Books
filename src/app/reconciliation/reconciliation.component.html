@@ -1,4 +1,4 @@
-<div class="recon-container resort-theme">
+<div class="recon-container">
   <header class="header">
     <div>
       <h1 class="title">RF Books · Reconciliation Center</h1>
@@ -7,6 +7,14 @@
       </p>
     </div>
   </header>
+
+  <div class="bank-banner" *ngIf="!bankConnected()">
+  <span>Bank account not connected yet.</span>
+  <button type="button" class="btn primary" (click)="goToOnboarding()">
+    Connect Bank with Plaid
+  </button>
+</div>
+
 
   <section class="card filters">
     <div class="row">

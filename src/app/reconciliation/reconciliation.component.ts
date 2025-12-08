@@ -7,6 +7,7 @@ import {
   ReconciliationStatus,
 } from './reconciliation.models';
 import { ReconciliationService } from './reconciliation.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'rf-reconciliation-center',
@@ -16,6 +17,7 @@ import { ReconciliationService } from './reconciliation.service';
   styleUrls: ['./reconciliation.component.scss'],
 })
 export class ReconciliationComponent implements OnInit {
+  bankConnected = signal<boolean>(false);
   from = signal<string>('');
   to = signal<string>('');
 
@@ -40,15 +42,23 @@ export class ReconciliationComponent implements OnInit {
     () => this.matches().filter(m => m.status === 'MULTIPLE_MATCHES').length,
   );
 
-  constructor(private reconService: ReconciliationService) {}
+  constructor(private reconService: ReconciliationService,  private router: Router) {}
 
-  ngOnInit(): void {
+    ngOnInit(): void {
     const today = new Date();
     const weekAgo = new Date();
     weekAgo.setDate(today.getDate() - 7);
     this.from.set(this.toLocalInputValue(weekAgo));
     this.to.set(this.toLocalInputValue(today));
-  }
+
+    const flag = localStorage.getItem('rfbooks_bank_connected');
+    this.bankConnected.set(flag === 'true');
+    }
+
+    goToOnboarding(): void {
+  this.router.navigate(['/recon/onboarding']);
+}
+
 
   private toLocalInputValue(date: Date): string {
     const pad = (n: number) => String(n).padStart(2, '0');
@@ -78,9 +88,11 @@ export class ReconciliationComponent implements OnInit {
 
   runReconciliation(): void {
     if (!this.from() || !this.to()) return;
+
     this.isLoading.set(true);
     const fromIso = this.toIsoString(this.from());
     const toIso = this.toIsoString(this.to());
+
     this.reconService.runReconciliation(fromIso, toIso).subscribe({
       next: matches => {
         this.matches.set(matches);
