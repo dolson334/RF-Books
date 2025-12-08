@@ -240,6 +240,7 @@ tbody tr:last-child {
   align-items: center;
   justify-content: center;
   z-index: 40;
+  -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
 }
 
@@ -280,4 +281,71 @@ tbody tr:last-child {
   gap: 0.75rem;
   font-size: 0.85rem;
 }
+
+.bank-banner.error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.source-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+.source-badge.rfbooks {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  color: #1e40af;
+  border: 1px solid rgba(30, 64, 175, 0.2);
+}
+
+.source-badge.plaid {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  color: #065f46;
+  border: 1px solid rgba(6, 95, 70, 0.2);
+}
+
+.source-badge.rfbooks-inline,
+.source-badge.plaid-inline {
+  padding: 0.18rem 0.45rem;
+  font-size: 0.65rem;
+  margin-right: 0.3rem;
+}
+
+.source-badge.rfbooks-inline {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid rgba(30, 64, 175, 0.15);
+}
+
+.source-badge.plaid-inline {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid rgba(6, 95, 70, 0.15);
+}
+
+.data-cell {
+  padding: 0.4rem;
+  border-radius: 0.4rem;
+  display: inline-block;
+}
+
+.data-cell.rfbooks-data {
+  background: rgba(219, 234, 254, 0.3);
+  border-left: 3px solid #3b82f6;
+}
+
+.data-cell.plaid-data {
+  background: rgba(209, 250, 229, 0.3);
+  border-left: 3px solid #10b981;
+}
+
 

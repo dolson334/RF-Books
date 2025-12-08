@@ -7,6 +7,7 @@ import {
   ReconciliationStatus,
 } from './reconciliation.models';
 import { ReconciliationService } from './reconciliation.service';
+import { PlaidService } from './plaid.service';
 import { Router } from '@angular/router';
 
 @Component({
@@ -18,6 +19,7 @@ import { Router } from '@angular/router';
 })
 export class ReconciliationComponent implements OnInit {
   bankConnected = signal<boolean>(false);
+  connectionError = signal<boolean>(false);
   from = signal<string>('');
   to = signal<string>('');
 
@@ -42,18 +44,38 @@ export class ReconciliationComponent implements OnInit {
     () => this.matches().filter(m => m.status === 'MULTIPLE_MATCHES').length,
   );
 
-  constructor(private reconService: ReconciliationService,  private router: Router) {}
+  constructor(
+    private reconService: ReconciliationService,
+    private plaidService: PlaidService,
+    private router: Router
+  ) {}
 
-    ngOnInit(): void {
+  ngOnInit(): void {
     const today = new Date();
     const weekAgo = new Date();
     weekAgo.setDate(today.getDate() - 7);
     this.from.set(this.toLocalInputValue(weekAgo));
     this.to.set(this.toLocalInputValue(today));
 
-    const flag = localStorage.getItem('rfbooks_bank_connected');
-    this.bankConnected.set(flag === 'true');
-    }
+    // Check backend connection status
+    this.checkConnectionStatus();
+  }
+
+  checkConnectionStatus(): void {
+    this.plaidService.getConnectionStatus().subscribe({
+      next: status => {
+        this.bankConnected.set(status.connected);
+        this.connectionError.set(false);
+        // Sync with localStorage
+        localStorage.setItem('rfbooks_bank_connected', String(status.connected));
+      },
+      error: () => {
+        this.connectionError.set(true);
+        this.bankConnected.set(false);
+        localStorage.setItem('rfbooks_bank_connected', 'false');
+      },
+    });
+  }
 
     goToOnboarding(): void {
   this.router.navigate(['/recon/onboarding']);
@@ -97,8 +119,17 @@ export class ReconciliationComponent implements OnInit {
       next: matches => {
         this.matches.set(matches);
         this.isLoading.set(false);
+        this.connectionError.set(false);
       },
-      error: () => this.isLoading.set(false),
+      error: err => {
+        this.isLoading.set(false);
+        // Check if error is due to missing token
+        if (err.status === 400 || err.status === 500) {
+          this.connectionError.set(true);
+          this.bankConnected.set(false);
+          localStorage.setItem('rfbooks_bank_connected', 'false');
+        }
+      },
     });
   }
 

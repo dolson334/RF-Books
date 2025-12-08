@@ -15,6 +15,13 @@
   </button>
 </div>
 
+<div class="bank-banner error" *ngIf="connectionError() && bankConnected()">
+  <span>⚠️ Bank connection lost or token expired. Please reconnect your bank account.</span>
+  <button type="button" class="btn primary" (click)="goToOnboarding()">
+    Reconnect Bank
+  </button>
+</div>
+
 
   <section class="card filters">
     <div class="row">
@@ -69,7 +76,10 @@
 
   <main class="grid">
     <section class="card">
-      <h2>Guest Payments</h2>
+      <h2>
+        <span class="source-badge rfbooks">RF Books</span>
+        Guest Payments
+      </h2>
 
       <table *ngIf="payments().length; else noPayments">
         <thead>
@@ -111,8 +121,14 @@
           <tr>
             <th>Date</th>
             <th>Status</th>
-            <th>Payment</th>
-            <th>Bank Transaction</th>
+            <th>
+              <span class="source-badge rfbooks-inline">RF Books</span>
+              Payment
+            </th>
+            <th>
+              <span class="source-badge plaid-inline">Bank</span>
+              Transaction
+            </th>
             <th>Diff</th>
             <th>Reason</th>
           </tr>
@@ -126,7 +142,7 @@
               </span>
             </td>
             <td>
-              <div *ngIf="m.payment; else noPayment">
+              <div *ngIf="m.payment; else noPayment" class="data-cell rfbooks-data">
                 {{ m.payment?.paymentDate | date: 'shortDate' }} ·
                 {{ m.payment?.amount | number: '1.2-2' }} {{ m.payment?.currency }}<br />
                 {{ m.payment?.guestName || '—' }} / {{ m.payment?.reservationId || '—' }}
@@ -134,7 +150,7 @@
               <ng-template #noPayment>—</ng-template>
             </td>
             <td>
-              <div *ngIf="m.bankTransaction; else noBank">
+              <div *ngIf="m.bankTransaction; else noBank" class="data-cell plaid-data">
                 {{ m.bankTransaction?.transactionDate | date: 'shortDate' }} ·
                 {{ m.bankTransaction?.amount | number: '1.2-2' }}
                 {{ m.bankTransaction?.currency }}<br />

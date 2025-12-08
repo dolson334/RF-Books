@@ -23,6 +23,7 @@ export const MOCK_PAYMENTS: Payment[] = [
     guestName: 'Sarah Thompson',
     reservationId: 'RV-1245',
     reconciled: true,
+    source: 'rfbooks',
   },
   {
     id: 2,
@@ -35,6 +36,7 @@ export const MOCK_PAYMENTS: Payment[] = [
     guestName: 'Mark & Jenna Lewis',
     reservationId: 'CAB-87',
     reconciled: true,
+    source: 'rfbooks',
   },
   {
     id: 3,
@@ -47,6 +49,7 @@ export const MOCK_PAYMENTS: Payment[] = [
     guestName: 'Daniel H.',
     reservationId: 'TENT-331',
     reconciled: false,
+    source: 'rfbooks',
   },
 ];
 
@@ -57,6 +60,7 @@ const MOCK_BANK_TRANSACTIONS: BankTransactionSummary[] = [
     currency: 'USD',
     transactionDate: daysAgo(1),
     description: 'Visa Settlement · Sarah T.',
+    source: 'plaid',
   },
   {
     id: 102,
@@ -64,6 +68,7 @@ const MOCK_BANK_TRANSACTIONS: BankTransactionSummary[] = [
     currency: 'USD',
     transactionDate: daysAgo(2),
     description: 'ACH Deposit · Lewis Family',
+    source: 'plaid',
   },
 ];
 
