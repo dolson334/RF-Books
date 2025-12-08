@@ -25,7 +25,7 @@ export interface ConnectionStatus {
   providedIn: 'root',
 })
 export class PlaidService {
-  private readonly baseUrl = 'http://localhost:8080/api/plaid';
+  private readonly baseUrl = 'http://localhost:8081/api/plaid';
 
   constructor(private http: HttpClient) {}
 

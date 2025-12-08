@@ -7,7 +7,7 @@ import { Payment, ReconciliationMatch } from './reconciliation.models';
   providedIn: 'root',
 })
 export class ReconciliationService {
-  private readonly baseUrl = 'http://localhost:8080/api/reconciliation';
+  private readonly baseUrl = 'http://localhost:8081/api/reconciliation';
 
   constructor(private http: HttpClient) {}
 
