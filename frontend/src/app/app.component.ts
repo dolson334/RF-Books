@@ -20,11 +20,11 @@ import { CommonModule } from '@angular/common';
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      background: linear-gradient(135deg, #f0f9ff 0%, #f5f3ff 100%);
     }
 
     .main-content {
       flex: 1;
-      background-color: #f9fafb;
     }
   `]
 })

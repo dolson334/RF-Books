@@ -22,6 +22,7 @@ public class ExpenseController {
 
     @GetMapping
     public ResponseEntity<List<Expense>> getAllExpenses(
+            @RequestParam(required = false) String resortAlias,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         
@@ -32,14 +33,18 @@ public class ExpenseController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Expense> getExpenseById(@PathVariable Long id) {
+    public ResponseEntity<Expense> getExpenseById(
+            @RequestParam(required = false) String resortAlias,
+            @PathVariable Long id) {
         return expenseService.getExpenseById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<Expense> createExpense(@RequestBody ExpenseRequest request) {
+    public ResponseEntity<Expense> createExpense(
+            @RequestParam(required = false) String resortAlias,
+            @RequestBody ExpenseRequest request) {
         Expense expense = new Expense();
         expense.setExpenseDate(request.getExpenseDate());
         expense.setAmount(request.getAmount());
@@ -56,7 +61,10 @@ public class ExpenseController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Expense> updateExpense(@PathVariable Long id, @RequestBody ExpenseRequest request) {
+    public ResponseEntity<Expense> updateExpense(
+            @RequestParam(required = false) String resortAlias,
+            @PathVariable Long id, 
+            @RequestBody ExpenseRequest request) {
         Expense expense = new Expense();
         expense.setExpenseDate(request.getExpenseDate());
         expense.setAmount(request.getAmount());
@@ -73,7 +81,9 @@ public class ExpenseController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteExpense(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteExpense(
+            @RequestParam(required = false) String resortAlias,
+            @PathVariable Long id) {
         expenseService.deleteExpense(id);
         return ResponseEntity.noContent().build();
     }
