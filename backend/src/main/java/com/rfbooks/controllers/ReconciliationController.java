@@ -24,9 +24,7 @@ public class ReconciliationController {
 
     @GetMapping("/latest")
     public ResponseEntity<ReconciliationSummary> getLatestRun() {
-        return reconciliationService.getLatestRunSummary()
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(reconciliationService.getLatestRunSummary().orElse(null));
     }
 
     @GetMapping("/latest/details")

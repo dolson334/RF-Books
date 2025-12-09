@@ -7,6 +7,9 @@
       </p>
     </div>
     <div class="header-actions">
+      <button type="button" class="btn-primary" (click)="runNow()" [disabled]="isLoading()">
+        {{ isLoading() ? 'Running...' : 'Run Now' }}
+      </button>
       <button type="button" class="btn-link" (click)="goToSettings()">
         ⚙️ Settings
       </button>

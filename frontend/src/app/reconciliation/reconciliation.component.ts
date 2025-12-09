@@ -53,19 +53,7 @@ export class ReconciliationComponent implements OnInit {
     private plaidService: PlaidService,
     private router: Router,
     private onboardingStatus: OnboardingStatusService
-  ) {
-    // React to onboarding status changes
-    effect(() => {
-      const missingConfig = this.onboardingStatus.missingConfig();
-      if (missingConfig && (missingConfig.chartOfAccounts || missingConfig.productsServices)) {
-        this.showConfigWarning.set(true);
-        this.missingItems.set(this.onboardingStatus.getMissingItems());
-      } else {
-        this.showConfigWarning.set(false);
-        this.missingItems.set([]);
-      }
-    });
-  }
+  ) {}
 
   ngOnInit(): void {
     // Check backend connection status
@@ -73,6 +61,9 @@ export class ReconciliationComponent implements OnInit {
     
     // Check onboarding status from backend
     this.onboardingStatus.checkStatus();
+    
+    // Check for missing configuration
+    this.checkMissingConfiguration();
     
     // Load latest reconciliation results
     this.loadLatestReconciliation();
@@ -85,15 +76,22 @@ export class ReconciliationComponent implements OnInit {
     this.isLoading.set(true);
     this.reconService.getLatestSummary().subscribe({
       next: summary => {
-        this.summary.set(summary);
-        this.lastRunTime.set(this.formatTimestamp(summary.runAt));
-        this.showReconciliationIssues.set(summary.hasIssues);
-        this.isLoading.set(false);
-        
-        // Load details if needed
-        if (summary.hasIssues) {
-          this.loadDetails();
+        if (summary) {
+          this.summary.set(summary);
+          this.lastRunTime.set(this.formatTimestamp(summary.runAt));
+          this.showReconciliationIssues.set(summary.hasIssues);
+          
+          // Load details if needed
+          if (summary.hasIssues) {
+            this.loadDetails();
+          }
+        } else {
+          // No reconciliation runs yet
+          this.summary.set(null);
+          this.lastRunTime.set('Never');
+          this.showReconciliationIssues.set(false);
         }
+        this.isLoading.set(false);
       },
       error: () => {
         this.isLoading.set(false);
@@ -110,6 +108,17 @@ export class ReconciliationComponent implements OnInit {
         console.error('Failed to load reconciliation details');
       }
     });
+  }
+
+  checkMissingConfiguration(): void {
+    const missingConfig = this.onboardingStatus.missingConfig();
+    if (missingConfig && (missingConfig.chartOfAccounts || missingConfig.productsServices)) {
+      this.showConfigWarning.set(true);
+      this.missingItems.set(this.onboardingStatus.getMissingItems());
+    } else {
+      this.showConfigWarning.set(false);
+      this.missingItems.set([]);
+    }
   }
 
   formatTimestamp(timestamp: string): string {
@@ -148,6 +157,29 @@ export class ReconciliationComponent implements OnInit {
         this.bankConnected.set(false);
         localStorage.setItem('rfbooks_bank_connected', 'false');
       },
+    });
+  }
+
+  runNow(): void {
+    this.isLoading.set(true);
+    this.reconService.runNow().subscribe({
+      next: summary => {
+        if (summary) {
+          this.summary.set(summary);
+          this.lastRunTime.set(this.formatTimestamp(summary.runAt));
+          this.showReconciliationIssues.set(summary.hasIssues);
+          
+          // Load details if there are issues
+          if (summary.hasIssues) {
+            this.loadDetails();
+          }
+        }
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to run reconciliation', err);
+        this.isLoading.set(false);
+      }
     });
   }
 

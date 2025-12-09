@@ -23,19 +23,19 @@ public class ReconciliationRun {
     @Column(name = "end_date", nullable = false)
     private String endDate;
 
-    @Column(nullable = false)
+    @Column(name = "matched_count", nullable = false)
     private Integer matchedCount = 0;
 
-    @Column(nullable = false)
+    @Column(name = "unmatched_payment_count", nullable = false)
     private Integer unmatchedPaymentCount = 0;
 
-    @Column(nullable = false)
+    @Column(name = "unmatched_bank_count", nullable = false)
     private Integer unmatchedBankCount = 0;
 
-    @Column(nullable = false)
+    @Column(name = "total_payments", nullable = false)
     private Integer totalPayments = 0;
 
-    @Column(nullable = false)
+    @Column(name = "total_bank_transactions", nullable = false)
     private Integer totalBankTransactions = 0;
 
     @Column(nullable = false)
@@ -46,6 +46,9 @@ public class ReconciliationRun {
 
     @Column(name = "results_json", columnDefinition = "TEXT")
     private String resultsJson; // Store full reconciliation results as JSON
+
+    @Column(name = "created_at")
+    private Instant createdAt;
 
     // Getters and setters
     public Long getId() {
@@ -150,5 +153,13 @@ public class ReconciliationRun {
 
     public void setResultsJson(String resultsJson) {
         this.resultsJson = resultsJson;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
     }
 }
