@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 @Component
+@SuppressWarnings("rawtypes")
 public class SchemaBasedMultiTenantConnectionProvider implements MultiTenantConnectionProvider {
 
     private final DataSource dataSource;
@@ -27,7 +28,7 @@ public class SchemaBasedMultiTenantConnectionProvider implements MultiTenantConn
     }
 
     @Override
-    public Connection getConnection(String tenantIdentifier) throws SQLException {
+    public Connection getConnection(Object tenantIdentifier) throws SQLException {
         final Connection connection = getAnyConnection();
         try {
             connection.createStatement().execute("SET search_path TO " + tenantIdentifier);
@@ -38,7 +39,7 @@ public class SchemaBasedMultiTenantConnectionProvider implements MultiTenantConn
     }
 
     @Override
-    public void releaseConnection(String tenantIdentifier, Connection connection) throws SQLException {
+    public void releaseConnection(Object tenantIdentifier, Connection connection) throws SQLException {
         try {
             connection.createStatement().execute("SET search_path TO public");
         } catch (SQLException e) {

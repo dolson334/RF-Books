@@ -8,13 +8,20 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @Component
 public class TenantInterceptor implements HandlerInterceptor {
 
-    private static final String TENANT_HEADER = "X-Tenant-ID";
-    private static final String DEFAULT_TENANT = "client_default";
+    private static final String RESORT_ALIAS_PARAM = "resortAlias";
+    private static final String DEFAULT_TENANT = "testresort";
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        String tenantId = request.getHeader(TENANT_HEADER);
+        // Try to get tenant from query parameter first
+        String tenantId = request.getParameter(RESORT_ALIAS_PARAM);
         
+        // Fallback to header if param not present
+        if (tenantId == null || tenantId.isEmpty()) {
+            tenantId = request.getHeader("X-Tenant-ID");
+        }
+        
+        // Use default if still not found
         if (tenantId == null || tenantId.isEmpty()) {
             tenantId = DEFAULT_TENANT;
         }

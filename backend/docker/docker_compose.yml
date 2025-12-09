@@ -1,18 +1,27 @@
 name: rf-books
-version: '3.8'
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:15
     container_name: rfbooks-postgres
-    ports:
-      - "5433:5432"
     environment:
       POSTGRES_DB: rfbooks
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - rfbooks-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql
+      - ./schema.sql:/docker-entrypoint-initdb.d/02-schema.sql
+      - ./03-apply-schema.sql:/docker-entrypoint-initdb.d/03-apply-schema.sql
+    networks:
+      - rfbooks-network
 
 volumes:
-  postgres_data:
+  rfbooks-data:
+    driver: local
+
+networks:
+  rfbooks-network:
+    driver: bridge

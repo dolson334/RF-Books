@@ -7,17 +7,19 @@ RF Books uses **schema-based multitenancy** where each client gets their own Pos
 
 ### Start Database
 ```bash
-cd backend
+cd backend/docker
 docker-compose up -d
 ```
 
 ### Stop Database
 ```bash
+cd backend/docker
 docker-compose down
 ```
 
 ### View Logs
 ```bash
+cd backend/docker
 docker-compose logs -f postgres
 ```
 
@@ -26,6 +28,10 @@ docker-compose logs -f postgres
 ### Default Tenant
 - Schema: `client_default`
 - Used when no `X-Tenant-ID` header is provided
+
+### Demo Tenant
+- Schema: `client_testresort`
+- Pre-created for testing
 
 ### Add New Tenant
 Connect to PostgreSQL and create a new schema:
@@ -44,7 +50,7 @@ GRANT ALL PRIVILEGES ON SCHEMA client_newclient TO postgres;
 Include tenant ID in request header:
 
 ```bash
-curl -H "X-Tenant-ID: client_demo" http://localhost:8081/api/onboarding/progress
+curl -H "X-Tenant-ID: client_testresort" http://localhost:8081/api/onboarding/progress
 ```
 
 ### Frontend Integration
@@ -53,7 +59,7 @@ Update Angular HTTP interceptor to add tenant header:
 ```typescript
 // In your HTTP interceptor
 headers: {
-  'X-Tenant-ID': 'client_demo'  // Get from user context
+  'X-Tenant-ID': 'client_testresort'  // Get from user context
 }
 ```
 
