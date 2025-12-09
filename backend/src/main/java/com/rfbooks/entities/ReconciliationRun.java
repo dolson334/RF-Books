@@ -11,16 +11,16 @@ public class ReconciliationRun {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "user_id", nullable = false)
     private String userId;
 
-    @Column(nullable = false)
+    @Column(name = "run_at", nullable = false)
     private Instant runAt;
 
-    @Column(nullable = false)
+    @Column(name = "start_date", nullable = false)
     private String startDate;
 
-    @Column(nullable = false)
+    @Column(name = "end_date", nullable = false)
     private String endDate;
 
     @Column(nullable = false)
@@ -41,10 +41,10 @@ public class ReconciliationRun {
     @Column(nullable = false)
     private String status = "COMPLETED"; // COMPLETED, FAILED, NO_BANK_CONNECTION
 
-    @Column(length = 1000)
+    @Column(name = "error_message", length = 1000)
     private String errorMessage;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "results_json", columnDefinition = "TEXT")
     private String resultsJson; // Store full reconciliation results as JSON
 
     // Getters and setters

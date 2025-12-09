@@ -13,26 +13,26 @@ public class ChartOfAccount {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "user_id", nullable = false)
     private String userId = "default-user"; // TODO: Get from authentication
 
-    @Column(nullable = false)
+    @Column(name = "account_number", nullable = false)
     private String accountNumber;
 
-    @Column(nullable = false)
+    @Column(name = "account_name", nullable = false)
     private String accountName;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(name = "account_type", nullable = false, columnDefinition = "TEXT")
     private AccountType accountType;
 
     @Column(length = 500)
     private String description;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
     // Constructors

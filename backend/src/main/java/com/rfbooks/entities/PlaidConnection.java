@@ -12,21 +12,22 @@ public class PlaidConnection {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "user_id", nullable = false, unique = true)
     private String userId; // Link to your user/organization
 
-    @Column(nullable = false)
+    @Column(name = "access_token", nullable = false)
     private String accessToken;
 
-    @Column(nullable = false)
+    @Column(name = "item_id", nullable = false)
     private String itemId;
 
-    private String institutionId;
+    @Column(name = "institution_name")
     private String institutionName;
 
-    @Column(nullable = false)
+    @Column(name = "connected_at", nullable = false)
     private Instant connectedAt;
 
+    @Column(name = "last_synced_at")
     private Instant lastSyncedAt;
 
     @Column(nullable = false)
@@ -55,9 +56,6 @@ public class PlaidConnection {
 
     public String getItemId() { return itemId; }
     public void setItemId(String itemId) { this.itemId = itemId; }
-
-    public String getInstitutionId() { return institutionId; }
-    public void setInstitutionId(String institutionId) { this.institutionId = institutionId; }
 
     public String getInstitutionName() { return institutionName; }
     public void setInstitutionName(String institutionName) { this.institutionName = institutionName; }

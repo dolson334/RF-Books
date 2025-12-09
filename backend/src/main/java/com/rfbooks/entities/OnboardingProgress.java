@@ -10,16 +10,16 @@ public class OnboardingProgress {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(nullable = false, unique = true)
+    @Column(name = "user_id", nullable = false, unique = true)
     private String userId = "default-user";
     
-    @Column(nullable = false)
+    @Column(name = "bank_connected", nullable = false)
     private Boolean bankConnected = false;
     
-    @Column(nullable = false)
+    @Column(name = "chart_of_accounts_created", nullable = false)
     private Boolean chartOfAccountsCreated = false;
     
-    @Column(nullable = false)
+    @Column(name = "products_services_created", nullable = false)
     private Boolean productsServicesCreated = false;
     
     @Column(nullable = false)

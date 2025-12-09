@@ -13,7 +13,7 @@ public class ProductService {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "user_id", nullable = false)
     private String userId = "default-user"; // TODO: Get from authentication
 
     @Column(nullable = false)
@@ -23,19 +23,22 @@ public class ProductService {
     @Column(nullable = false, columnDefinition = "TEXT")
     private ItemType type;
 
+    @Column(name = "price")
     private Double defaultPrice;
 
+    @Column(name = "sku")
     private String unitOfMeasure;
 
     @Column(length = 500)
     private String description;
 
+    @Column(name = "cost")
     private Long revenueAccountId;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
     // Constructors
