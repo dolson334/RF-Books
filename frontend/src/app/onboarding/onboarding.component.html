@@ -3,17 +3,17 @@
   <div class="progress-bar">
     <div class="step" [class.active]="currentStep() === 1" [class.completed]="currentStep() > 1">
       <div class="step-number">1</div>
-      <div class="step-label">Bank Account</div>
+      <div class="step-label">Chart of Accounts</div>
     </div>
     <div class="step-divider" [class.completed]="currentStep() > 1"></div>
     <div class="step" [class.active]="currentStep() === 2" [class.completed]="currentStep() > 2">
       <div class="step-number">2</div>
-      <div class="step-label">Chart of Accounts</div>
+      <div class="step-label">Products & Services</div>
     </div>
     <div class="step-divider" [class.completed]="currentStep() > 2"></div>
     <div class="step" [class.active]="currentStep() === 3" [class.completed]="currentStep() > 3">
       <div class="step-number">3</div>
-      <div class="step-label">Products & Services</div>
+      <div class="step-label">Bank Account (Optional)</div>
     </div>
     <div class="step-divider" [class.completed]="currentStep() > 3"></div>
     <div class="step" [class.active]="currentStep() === 4">
@@ -27,65 +27,8 @@
     {{ error() }}
   </div>
 
-  <!-- Step 1: Bank Connection -->
+  <!-- Step 1: Chart of Accounts -->
   <div class="card" *ngIf="currentStep() === 1">
-    <h1>Connect Your Bank Account</h1>
-    <p class="lead">
-      RF Books uses Plaid to securely connect to your bank and download transactions
-      for reconciliation.
-    </p>
-
-    <div class="bank-connection-status" *ngIf="bankConnected()">
-      <div class="success-icon">✓</div>
-      <div>
-        <strong>Bank Connected Successfully!</strong>
-        <p>Your bank account is now connected and ready for reconciliation.</p>
-      </div>
-    </div>
-
-    <div *ngIf="isLoading()" class="spinner-row">
-      <div class="spinner"></div>
-      <span>Connecting…</span>
-    </div>
-
-    <div class="actions">
-      <button
-        *ngIf="!bankConnected() && plaidReady()"
-        class="btn primary"
-        type="button"
-        (click)="launchPlaid()"
-        [disabled]="isLoading()"
-      >
-        Connect Bank with Plaid
-      </button>
-
-      <button
-        *ngIf="bankConnected()"
-        class="btn primary"
-        type="button"
-        (click)="nextFromBankConnection()"
-      >
-        Continue
-      </button>
-
-      <button
-        class="btn secondary"
-        type="button"
-        (click)="skipBankConnection()"
-        [disabled]="isLoading()"
-      >
-        Skip for Now
-      </button>
-    </div>
-
-    <p class="fine-print">
-      Plaid never shares your credentials with RF Books. We only receive read-only
-      access to transaction data.
-    </p>
-  </div>
-
-  <!-- Step 2: Chart of Accounts -->
-  <div class="card" *ngIf="currentStep() === 2">
     <h1>Set Up Your Chart of Accounts</h1>
     <p class="lead">
       Define the accounts used to categorize your financial transactions.
@@ -157,14 +100,6 @@
 
     <div class="actions">
       <button
-        class="btn secondary"
-        type="button"
-        (click)="goToStep(1)"
-        [disabled]="isLoading()"
-      >
-        Back
-      </button>
-      <button
         class="btn primary"
         type="button"
         (click)="saveChartOfAccounts()"
@@ -175,8 +110,8 @@
     </div>
   </div>
 
-  <!-- Step 3: Products & Services -->
-  <div class="card" *ngIf="currentStep() === 3">
+  <!-- Step 2: Products & Services -->
+  <div class="card" *ngIf="currentStep() === 2">
     <h1>Add Your Products & Services</h1>
     <p class="lead">
       Define what you offer at your campground or resort. This helps with accurate
@@ -259,7 +194,7 @@
       <button
         class="btn secondary"
         type="button"
-        (click)="goToStep(2)"
+        (click)="goToStep(1)"
         [disabled]="isLoading()"
       >
         Back
@@ -273,6 +208,73 @@
         {{ isLoading() ? 'Saving...' : 'Continue' }}
       </button>
     </div>
+  </div>
+
+  <!-- Step 3: Bank Connection (Optional) -->
+  <div class="card" *ngIf="currentStep() === 3">
+    <h1>Connect Your Bank Account (Optional)</h1>
+    <p class="lead">
+      RF Books uses Plaid to securely connect to your bank and download transactions
+      for reconciliation. You can skip this step and add it later from Settings.
+    </p>
+
+    <div class="bank-connection-status" *ngIf="bankConnected()">
+      <div class="success-icon">✓</div>
+      <div>
+        <strong>Bank Connected Successfully!</strong>
+        <p>Your bank account is now connected and ready for reconciliation.</p>
+      </div>
+    </div>
+
+    <div *ngIf="isLoading()" class="spinner-row">
+      <div class="spinner"></div>
+      <span>Connecting…</span>
+    </div>
+
+    <div class="actions">
+      <button
+        class="btn secondary"
+        type="button"
+        (click)="goToStep(2)"
+        [disabled]="isLoading()"
+      >
+        Back
+      </button>
+
+      <button
+        *ngIf="!bankConnected() && plaidReady()"
+        class="btn secondary"
+        type="button"
+        (click)="skipBankConnection()"
+        [disabled]="isLoading()"
+      >
+        Skip for Now
+      </button>
+
+      <button
+        *ngIf="!bankConnected() && plaidReady()"
+        class="btn primary"
+        type="button"
+        (click)="launchPlaid()"
+        [disabled]="isLoading()"
+      >
+        Connect Bank with Plaid
+      </button>
+
+      <button
+        *ngIf="bankConnected()"
+        class="btn primary"
+        type="button"
+        (click)="connectBankAndFinish()"
+      >
+        Continue
+      </button>
+    </div>
+
+    <p class="fine-print">
+      Plaid never shares your credentials with RF Books. We only receive read-only
+      access to transaction data. You can always connect your bank later from the reconciliation page.
+    </p>
   </div>
 
   <!-- Step 4: Complete -->
@@ -307,4 +309,3 @@
       </button>
     </div>
   </div>
-</div>

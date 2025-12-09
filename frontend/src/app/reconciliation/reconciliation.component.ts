@@ -77,11 +77,13 @@ export class ReconciliationComponent implements OnInit {
     });
   }
 
-    goToOnboarding(): void {
-  this.router.navigate(['/recon/onboarding']);
-}
+  goToOnboarding(): void {
+    this.router.navigate(['/recon/onboarding']);
+  }
 
-
+  goToSettings(): void {
+    this.router.navigate(['/settings']);
+  }
   private toLocalInputValue(date: Date): string {
     const pad = (n: number) => String(n).padStart(2, '0');
     const yyyy = date.getFullYear();

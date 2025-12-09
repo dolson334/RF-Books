@@ -19,18 +19,19 @@ export class OnboardingComponent implements OnInit {
   currentStep = signal<1 | 2 | 3 | 4>(1);
   isLoading = signal<boolean>(false);
   error = signal<string | null>(null);
+  isEditMode = signal<boolean>(false);
   
-  // Step 1: Bank Connection
-  plaidReady = signal<boolean>(false);
-  bankConnected = signal<boolean>(false);
-  private linkToken: string | null = null;
-
-  // Step 2: Chart of Accounts
+  // Step 1: Chart of Accounts
   accounts = signal<ChartOfAccount[]>([]);
   accountTypes: AccountType[] = ['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE'];
 
-  // Step 3: Products & Services
+  // Step 2: Products & Services
   productsServices = signal<ProductService[]>([]);
+
+  // Step 3: Bank Connection (Optional)
+  plaidReady = signal<boolean>(false);
+  bankConnected = signal<boolean>(false);
+  private linkToken: string | null = null;
 
   constructor(
     private plaidService: PlaidService,
@@ -39,12 +40,45 @@ export class OnboardingComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Check if onboarding is already complete (edit mode)
+    const onboardingComplete = localStorage.getItem('rfbooks_onboarding_complete');
+    if (onboardingComplete === 'true') {
+      this.isEditMode.set(true);
+      this.loadExistingData();
+    } else {
+      this.loadDefaultChartOfAccounts();
+      this.loadDefaultProductsServices();
+    }
     this.loadPlaidScriptIfNeeded();
-    this.loadDefaultChartOfAccounts();
-    this.loadDefaultProductsServices();
   }
 
-  // ========== STEP 1: BANK CONNECTION ==========
+  private loadExistingData(): void {
+    // Load existing chart of accounts
+    this.onboardingService.getChartOfAccounts().subscribe({
+      next: accounts => {
+        if (accounts.length > 0) {
+          this.accounts.set(accounts);
+        } else {
+          this.loadDefaultChartOfAccounts();
+        }
+      },
+      error: () => this.loadDefaultChartOfAccounts()
+    });
+
+    // Load existing products & services
+    this.onboardingService.getProductsServices().subscribe({
+      next: items => {
+        if (items.length > 0) {
+          this.productsServices.set(items);
+        } else {
+          this.loadDefaultProductsServices();
+        }
+      },
+      error: () => this.loadDefaultProductsServices()
+    });
+  }
+
+  // ========== STEP 1: CHART OF ACCOUNTS ==========
 
   private loadPlaidScriptIfNeeded(): void {
     if ((window as any).Plaid) {
@@ -108,15 +142,7 @@ export class OnboardingComponent implements OnInit {
     });
   }
 
-  skipBankConnection(): void {
-    this.currentStep.set(2);
-  }
-
-  nextFromBankConnection(): void {
-    this.currentStep.set(2);
-  }
-
-  // ========== STEP 2: CHART OF ACCOUNTS ==========
+  // ========== STEP 1: CHART OF ACCOUNTS ==========
 
   private loadDefaultChartOfAccounts(): void {
     this.accounts.set([
@@ -146,7 +172,7 @@ export class OnboardingComponent implements OnInit {
       next: () => {
         this.isLoading.set(false);
         this.error.set(null);
-        this.currentStep.set(3);
+        this.currentStep.set(2);
       },
       error: () => {
         this.error.set('Failed to save chart of accounts.');
@@ -155,7 +181,7 @@ export class OnboardingComponent implements OnInit {
     });
   }
 
-  // ========== STEP 3: PRODUCTS & SERVICES ==========
+  // ========== STEP 2: PRODUCTS & SERVICES ==========
 
   private loadDefaultProductsServices(): void {
     this.productsServices.set([
@@ -183,13 +209,25 @@ export class OnboardingComponent implements OnInit {
       next: () => {
         this.isLoading.set(false);
         this.error.set(null);
-        this.currentStep.set(4);
+        this.currentStep.set(3);
       },
       error: () => {
         this.error.set('Failed to save products & services.');
         this.isLoading.set(false);
       },
     });
+  }
+
+  // ========== STEP 3: BANK CONNECTION (OPTIONAL) ==========
+
+  skipBankConnection(): void {
+    this.currentStep.set(4);
+  }
+
+  connectBankAndFinish(): void {
+    if (this.bankConnected()) {
+      this.currentStep.set(4);
+    }
   }
 
   // ========== STEP 4: COMPLETE ==========

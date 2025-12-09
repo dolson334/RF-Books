@@ -6,6 +6,11 @@
         Reconcile campground and resort payments with your bank transactions.
       </p>
     </div>
+    <div class="header-actions">
+      <button type="button" class="btn-link" (click)="goToSettings()">
+        ⚙️ Settings
+      </button>
+    </div>
   </header>
 
   <div class="bank-banner" *ngIf="!bankConnected()">
