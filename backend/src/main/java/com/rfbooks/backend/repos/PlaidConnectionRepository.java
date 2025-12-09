@@ -1,5 +1,6 @@
-package com.rfbooks.backend.plaid;
+package com.rfbooks.backend.repos;
 
+import com.rfbooks.backend.entities.PlaidConnection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;

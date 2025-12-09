@@ -1,6 +1,4 @@
-package com.rfbooks.backend.plaid;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
+package com.rfbooks.backend.nonentities.payments;
 
 public class Payment {
     private Long id;

@@ -1,11 +1,15 @@
-package com.rfbooks.backend.plaid;
+package com.rfbooks.backend.services;
 
 import com.plaid.client.ApiClient;
 import com.plaid.client.model.*;
 import com.plaid.client.request.PlaidApi;
+import com.rfbooks.backend.entities.PlaidConnection;
+import com.rfbooks.backend.nonentities.plaid.ExchangePublicTokenRequest;
+import com.rfbooks.backend.nonentities.plaid.LinkTokenResponse;
+import com.rfbooks.backend.nonentities.plaid.PlaidTransaction;
+import com.rfbooks.backend.repos.PlaidConnectionRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import retrofit2.Response;
 
 import java.io.IOException;
 import java.time.Instant;

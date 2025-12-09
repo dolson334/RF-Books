@@ -1,4 +1,7 @@
-package com.rfbooks.backend.plaid;
+package com.rfbooks.backend.nonentities.reconciliation;
+
+import com.rfbooks.backend.nonentities.plaid.BankTransactionSummary;
+import com.rfbooks.backend.nonentities.payments.Payment;
 
 public class ReconciliationMatch {
     private Long id;

@@ -1,4 +1,4 @@
-package com.rfbooks.backend.plaid;
+package com.rfbooks.backend.nonentities.plaid;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

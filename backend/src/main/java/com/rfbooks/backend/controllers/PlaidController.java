@@ -1,12 +1,16 @@
-package com.rfbooks.backend.plaid;
+package com.rfbooks.backend.controllers;
 
+import com.rfbooks.backend.nonentities.plaid.ExchangePublicTokenRequest;
+import com.rfbooks.backend.nonentities.plaid.LinkTokenResponse;
+import com.rfbooks.backend.nonentities.plaid.PlaidTransaction;
+import com.rfbooks.backend.nonentities.plaid.TransactionsRequest;
+import com.rfbooks.backend.services.PlaidService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/plaid")
-@CrossOrigin(origins = "http://localhost:4200") // Add CORS for Angular
 public class PlaidController {
 
     private final PlaidService plaidService;

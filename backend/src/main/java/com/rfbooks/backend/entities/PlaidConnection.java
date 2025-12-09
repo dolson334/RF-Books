@@ -1,5 +1,5 @@
 
-package com.rfbooks.backend.plaid;
+package com.rfbooks.backend.entities;
 
 import jakarta.persistence.*;
 import java.time.Instant;
