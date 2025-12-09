@@ -1,0 +1,267 @@
+<div class="reports-container">
+  <div class="header">
+    <div>
+      <h1>Financial Dashboard</h1>
+      <p class="subtitle">Real-time insights into your business performance</p>
+    </div>
+    <div class="header-actions">
+      <select class="period-selector" [(ngModel)]="selectedPeriod" (ngModelChange)="onPeriodChange()">
+        <option *ngFor="let p of periods" [value]="p.value">{{ p.label }}</option>
+      </select>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading financial data...</p>
+  </div>
+
+  <div *ngIf="!isLoading() && report()" class="report-content">
+    <!-- Key Metrics Cards -->
+    <div class="metrics-grid">
+      <div class="metric-card income">
+        <div class="metric-icon">💰</div>
+        <div class="metric-content">
+          <span class="metric-label">Total Income</span>
+          <span class="metric-value">{{ formatCurrency(report()!.summary.totalIncome) }}</span>
+        </div>
+        <div class="metric-trend up">↗ 12.5%</div>
+      </div>
+
+      <div class="metric-card expenses">
+        <div class="metric-icon">💸</div>
+        <div class="metric-content">
+          <span class="metric-label">Total Expenses</span>
+          <span class="metric-value">{{ formatCurrency(report()!.summary.totalExpenses) }}</span>
+        </div>
+        <div class="metric-trend down">↘ 8.3%</div>
+      </div>
+
+      <div class="metric-card net" [class]="netIncomeClass()">
+        <div class="metric-icon">📈</div>
+        <div class="metric-content">
+          <span class="metric-label">Net Income</span>
+          <span class="metric-value">{{ formatCurrency(report()!.summary.netIncome) }}</span>
+        </div>
+        <div class="metric-badge">{{ report()!.summary.period }}</div>
+      </div>
+
+      <div class="metric-card reconciliation">
+        <div class="metric-icon">✓</div>
+        <div class="metric-content">
+          <span class="metric-label">Reconciliation Rate</span>
+          <span class="metric-value">{{ formatPercent(report()!.summary.reconciliationRate) }}</span>
+        </div>
+        <div class="progress-ring">
+          <svg class="progress-svg" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" class="progress-bg"></circle>
+            <circle 
+              cx="50" 
+              cy="50" 
+              r="45" 
+              class="progress-fill"
+              [style.stroke-dashoffset]="282 - (282 * report()!.summary.reconciliationRate / 100)">
+            </circle>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-section">
+      <!-- Expense Breakdown Chart -->
+      <div class="chart-card">
+        <h3>Expenses by Category</h3>
+        <div class="donut-chart">
+          <div class="chart-legend">
+            <div *ngFor="let cat of report()!.expensesByCategory" class="legend-item">
+              <span class="legend-color" [style.background]="'hsl(' + (report()!.expensesByCategory.indexOf(cat) * 40) + ', 70%, 60%)'"></span>
+              <span class="legend-label">{{ cat.category }}</span>
+              <span class="legend-value">{{ formatCurrency(cat.amount) }}</span>
+              <span class="legend-percent">{{ formatPercent(cat.percentage) }}</span>
+            </div>
+          </div>
+          <svg class="donut-svg" viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="80" fill="none" stroke="#f0f0f0" stroke-width="40"></circle>
+            <ng-container *ngFor="let cat of report()!.expensesByCategory; let i = index">
+              <circle 
+                cx="100" 
+                cy="100" 
+                r="80" 
+                fill="none" 
+                [attr.stroke]="'hsl(' + (i * 40) + ', 70%, 60%)'"
+                stroke-width="40"
+                [attr.stroke-dasharray]="getDonutSegment(cat.percentage)"
+                [attr.stroke-dashoffset]="getDonutOffset(i)"
+                transform="rotate(-90 100 100)">
+              </circle>
+            </ng-container>
+            <text x="100" y="95" text-anchor="middle" class="donut-center-label">Total</text>
+            <text x="100" y="110" text-anchor="middle" class="donut-center-value">{{ formatCurrency(report()!.summary.totalExpenses) }}</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Trends Chart -->
+      <div class="chart-card wide">
+        <h3>Income vs Expenses Trend</h3>
+        <div class="line-chart">
+          <div class="chart-grid">
+            <div class="grid-line" *ngFor="let i of [0,1,2,3,4]"></div>
+          </div>
+          <div class="chart-bars">
+            <div *ngFor="let trend of report()!.trends" class="trend-group">
+              <div class="bar-pair">
+                <div 
+                  class="bar income-bar" 
+                  [style.height.%]="getBarHeight(trend.income, maxTrendValue())"
+                  [title]="'Income: ' + formatCurrency(trend.income)">
+                </div>
+                <div 
+                  class="bar expense-bar" 
+                  [style.height.%]="getBarHeight(trend.expenses, maxTrendValue())"
+                  [title]="'Expenses: ' + formatCurrency(trend.expenses)">
+                </div>
+              </div>
+              <span class="trend-label">{{ trend.date }}</span>
+            </div>
+          </div>
+          <div class="chart-legend-horizontal">
+            <div class="legend-item"><span class="color-box income"></span> Income</div>
+            <div class="legend-item"><span class="color-box expenses"></span> Expenses</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Tables Section -->
+    <div class="tables-section">
+      <!-- Top Vendors -->
+      <div class="data-table-card">
+        <h3>Top Vendors</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Vendor</th>
+              <th>Transactions</th>
+              <th>Total Spent</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let vendor of report()!.topVendors">
+              <td class="vendor-name">{{ vendor.vendorName }}</td>
+              <td class="count">{{ vendor.transactionCount }}</td>
+              <td class="amount">{{ formatCurrency(vendor.totalAmount) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Monthly Comparison -->
+      <div class="data-table-card">
+        <h3>Monthly Comparison</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Income</th>
+              <th>Expenses</th>
+              <th>Net</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let month of report()!.monthlyComparison">
+              <td class="month-name">{{ month.month }}</td>
+              <td class="income">{{ formatCurrency(month.income) }}</td>
+              <td class="expenses">{{ formatCurrency(month.expenses) }}</td>
+              <td class="net" [class.positive]="month.net >= 0" [class.negative]="month.net < 0">
+                {{ formatCurrency(month.net) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Payment Methods -->
+      <div class="data-table-card">
+        <h3>Payment Methods</h3>
+        <div class="payment-methods">
+          <div *ngFor="let pm of report()!.paymentMethods" class="payment-method-item">
+            <div class="pm-header">
+              <span class="pm-name">{{ pm.method }}</span>
+              <span class="pm-amount">{{ formatCurrency(pm.amount) }}</span>
+            </div>
+            <div class="pm-bar-container">
+              <div class="pm-bar" [style.width.%]="pm.percentage"></div>
+            </div>
+            <span class="pm-percent">{{ formatPercent(pm.percentage) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Available Reports Section -->
+    <div class="available-reports">
+      <div class="section-header">
+        <h2>Available Reports</h2>
+        <p>Generate detailed financial reports with custom date ranges</p>
+      </div>
+      
+      <div class="reports-grid">
+        <div class="report-card" (click)="openReport('profit-loss')">
+          <div class="report-icon">📊</div>
+          <div class="report-info">
+            <h3>Profit & Loss Statement</h3>
+            <p>Detailed income and expense breakdown with drill-down capabilities</p>
+          </div>
+          <button class="btn-run-report">Run Report →</button>
+        </div>
+
+        <div class="report-card" (click)="openReport('balance-sheet')">
+          <div class="report-icon">⚖️</div>
+          <div class="report-info">
+            <h3>Balance Sheet</h3>
+            <p>Assets, liabilities, and equity overview</p>
+          </div>
+          <button class="btn-run-report">Run Report →</button>
+        </div>
+
+        <div class="report-card" (click)="openReport('cash-flow')">
+          <div class="report-icon">💵</div>
+          <div class="report-info">
+            <h3>Cash Flow Statement</h3>
+            <p>Track cash inflows and outflows over time</p>
+          </div>
+          <button class="btn-run-report">Run Report →</button>
+        </div>
+
+        <div class="report-card" (click)="openReport('expense-by-vendor')">
+          <div class="report-icon">🏪</div>
+          <div class="report-info">
+            <h3>Expenses by Vendor</h3>
+            <p>Detailed vendor spending analysis and trends</p>
+          </div>
+          <button class="btn-run-report">Run Report →</button>
+        </div>
+
+        <div class="report-card" (click)="openReport('revenue-by-category')">
+          <div class="report-icon">📈</div>
+          <div class="report-info">
+            <h3>Revenue by Category</h3>
+            <p>Income breakdown by revenue streams</p>
+          </div>
+          <button class="btn-run-report">Run Report →</button>
+        </div>
+
+        <div class="report-card" (click)="openReport('reconciliation')">
+          <div class="report-icon">✅</div>
+          <div class="report-info">
+            <h3>Reconciliation Report</h3>
+            <p>Bank reconciliation status and unmatched transactions</p>
+          </div>
+          <button class="btn-run-report">Run Report →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

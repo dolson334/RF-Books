@@ -1,0 +1,134 @@
+<div class="pl-container">
+  <div class="header">
+    <button class="btn-back" (click)="backToDashboard()">
+      ← Back to Dashboard
+    </button>
+    <div class="title-section">
+      <h1>Profit & Loss Statement</h1>
+      <p class="subtitle">Detailed income and expense breakdown</p>
+    </div>
+    <button class="btn-export" (click)="exportReport()">
+      📄 Export PDF
+    </button>
+  </div>
+
+  <div class="date-range-selector">
+    <div class="date-input-group">
+      <label>Start Date</label>
+      <input type="date" [(ngModel)]="startDate" (change)="loadReport()" class="date-input">
+    </div>
+    <div class="date-input-group">
+      <label>End Date</label>
+      <input type="date" [(ngModel)]="endDate" (change)="loadReport()" class="date-input">
+    </div>
+    <button class="btn-refresh" (click)="loadReport()">
+      🔄 Refresh
+    </button>
+  </div>
+
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Generating report...</p>
+  </div>
+
+  <div *ngIf="!isLoading() && reportData().length > 0" class="report-content">
+    <div class="report-card">
+      <div class="report-header">
+        <h2>RF Books</h2>
+        <h3>Profit & Loss Statement</h3>
+        <p class="date-range">{{ startDate() }} to {{ endDate() }}</p>
+      </div>
+
+      <table class="pl-table">
+        <thead>
+          <tr>
+            <th class="item-column">Account</th>
+            <th class="amount-column">Amount</th>
+            <th class="percent-column">% of Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let item of reportData()">
+            <!-- Category Header (Expandable) -->
+            <tr *ngIf="item.isCategory" 
+                class="category-row" 
+                (click)="toggleExpand(item)">
+              <td class="item-name category-name">
+                <span class="expand-icon">{{ item.expanded ? '▼' : '▶' }}</span>
+                {{ item.name }}
+              </td>
+              <td class="amount">{{ formatCurrency(item.amount) }}</td>
+              <td class="percent"></td>
+            </tr>
+
+            <!-- Child Items (Show when expanded) -->
+            <ng-container *ngIf="item.expanded && item.children">
+              <tr *ngFor="let child of item.children" class="child-row">
+                <td class="item-name child-name">{{ child.name }}</td>
+                <td class="amount">{{ formatCurrency(child.amount) }}</td>
+                <td class="percent">{{ formatPercent(child.percentage!) }}</td>
+              </tr>
+            </ng-container>
+
+            <!-- Subtotal Row -->
+            <tr *ngIf="item.isSubtotal && !item.isTotal" class="subtotal-row">
+              <td class="item-name subtotal-name">{{ item.name }}</td>
+              <td class="amount subtotal-amount">{{ formatCurrency(item.amount) }}</td>
+              <td class="percent"></td>
+            </tr>
+
+            <!-- Total Row -->
+            <tr *ngIf="item.isTotal" class="total-row">
+              <td class="item-name total-name">{{ item.name }}</td>
+              <td class="amount total-amount">{{ formatCurrency(item.amount) }}</td>
+              <td class="percent"></td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+
+      <div class="report-footer">
+        <p>Generated on {{ new Date().toLocaleDateString() }}</p>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="summary-card revenue">
+        <div class="card-icon">💰</div>
+        <div class="card-content">
+          <span class="card-label">Total Revenue</span>
+          <span class="card-value">$125,000</span>
+          <span class="card-change positive">+12.5% vs last period</span>
+        </div>
+      </div>
+
+      <div class="summary-card expenses">
+        <div class="card-icon">💸</div>
+        <div class="card-content">
+          <span class="card-label">Total Expenses</span>
+          <span class="card-value">$60,000</span>
+          <span class="card-change negative">+5.2% vs last period</span>
+        </div>
+      </div>
+
+      <div class="summary-card profit">
+        <div class="card-icon">📈</div>
+        <div class="card-content">
+          <span class="card-label">Net Profit</span>
+          <span class="card-value">$65,000</span>
+          <span class="card-change positive">+18.2% vs last period</span>
+        </div>
+      </div>
+
+      <div class="summary-card margin">
+        <div class="card-icon">📊</div>
+        <div class="card-content">
+          <span class="card-label">Profit Margin</span>
+          <span class="card-value">52%</span>
+          <span class="card-change positive">+3.1% vs last period</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

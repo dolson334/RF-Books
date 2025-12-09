@@ -21,6 +21,10 @@ import { RouterModule, Router } from '@angular/router';
             <span class="icon">📝</span>
             <span>Expenses</span>
           </a>
+          <a routerLink="/reports" routerLinkActive="active" class="nav-link">
+            <span class="icon">📊</span>
+            <span>Reports</span>
+          </a>
           <a routerLink="/settings" class="nav-link">
             <span class="icon">⚙️</span>
             <span>Settings</span>

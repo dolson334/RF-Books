@@ -3,6 +3,8 @@ import { ReconciliationComponent } from './reconciliation/reconciliation.compone
 import { BankOnboardingComponent } from './reconciliation/bank-onboarding.component';
 import { OnboardingComponent } from './onboarding/onboarding.component';
 import { ExpensesComponent } from './expenses/expenses.component';
+import { ReportsComponent } from './reports/reports.component';
+import { ProfitLossComponent } from './reports/profit-loss/profit-loss.component';
 import { onboardingGuard } from './guards/onboarding.guard';
 
 const getInitialRedirect = (): string => {
@@ -27,6 +29,16 @@ export const routes: Routes = [
   { 
     path: 'expenses', 
     component: ExpensesComponent,
+    canActivate: [onboardingGuard]
+  },
+  { 
+    path: 'reports', 
+    component: ReportsComponent,
+    canActivate: [onboardingGuard]
+  },
+  { 
+    path: 'reports/profit-loss', 
+    component: ProfitLossComponent,
     canActivate: [onboardingGuard]
   },
   { path: '**', redirectTo: 'recon' },
