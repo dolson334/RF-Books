@@ -3,12 +3,12 @@
     <div>
       <h1 class="title">RF Books · Reconciliation Center</h1>
       <p class="subtitle">
-        Auto-reconciliation runs every hour. Last run: {{ lastRunTime() }}
+        Manual reconciliation · Match income and expenses to bank transactions
       </p>
     </div>
     <div class="header-actions">
       <button type="button" class="btn-primary" (click)="runNow()" [disabled]="isLoading()">
-        {{ isLoading() ? 'Running...' : 'Run Now' }}
+        {{ isLoading() ? 'Refreshing...' : 'Refresh Data' }}
       </button>
       <button type="button" class="btn-link" (click)="goToSettings()">
         ⚙️ Settings
@@ -65,6 +65,22 @@
   </button>
 </div>
 
+  <!-- Reconciliation Tabs -->
+  <div class="tabs">
+    <button 
+      class="tab" 
+      [class.active]="activeTab() === 'income'"
+      (click)="setTab('income')">
+      💵 Income
+    </button>
+    <button 
+      class="tab" 
+      [class.active]="activeTab() === 'expenses'"
+      (click)="setTab('expenses')">
+      📝 Expenses
+    </button>
+  </div>
+
   <!-- Summary Cards -->
   <section class="summary-cards" *ngIf="summary()">
     <div class="card summary-card matched">
@@ -76,8 +92,8 @@
       <div class="card-label">Unmatched</div>
     </div>
     <div class="card summary-card total">
-      <div class="card-value">{{ summary()?.totalPayments || 0 }}</div>
-      <div class="card-label">Total Payments</div>
+      <div class="card-value">{{ summary()?.totalBankTransactions || 0 }}</div>
+      <div class="card-label">Bank Transactions</div>
     </div>
   </section>
 
@@ -85,118 +101,237 @@
     <div class="loader"></div>
   </div>
 
-  <!-- Matches Section - Only show if there are unmatched items -->
-  <main class="matches-section" *ngIf="unmatchedCount() > 0">
-    <!-- Manual Matching Section -->
-    <section class="card manual-match-card">
-      <h2>Manual Matching</h2>
-      <p class="help-text">Select a payment and bank transaction to manually match them</p>
-      
-      <div class="match-grid">
-        <div class="match-column">
-          <h3>Unmatched Payments</h3>
-          <div class="match-list">
-            <div *ngFor="let payment of unmatchedPayments()" 
-                 class="match-item"
-                 [class.selected]="selectedPayment()?.id === payment.id"
-                 (click)="selectPayment(payment)">
-              <div class="match-item-header">
-                <strong>{{ payment.guestName || 'Unknown Guest' }}</strong>
-                <span class="amount">${{ payment.amount | number: '1.2-2' }}</span>
-              </div>
-              <div class="match-item-details">
-                <small>{{ payment.paymentDate | date: 'short' }}</small>
-                <small *ngIf="payment.reservationId">Res: {{ payment.reservationId }}</small>
-                <small *ngIf="payment.method">{{ payment.method }}</small>
-              </div>
-            </div>
-            <div *ngIf="unmatchedPayments().length === 0" class="empty-list">
-              No unmatched payments
-            </div>
-          </div>
-        </div>
+  <!-- Expense Reconciliation Tab -->
+  <div *ngIf="activeTab() === 'expenses'" class="tab-content">
+    <!-- View Toggle -->
+    <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
+      <button 
+        class="btn" 
+        [class.btn-primary]="!showMatched()"
+        [class.btn-secondary]="showMatched()"
+        (click)="showMatched.set(false)">
+        Unmatched ({{ unreconciledExpenses().length }})
+      </button>
+      <button 
+        class="btn"
+        [class.btn-primary]="showMatched()"
+        [class.btn-secondary]="!showMatched()"
+        (click)="showMatched.set(true)">
+        Matched ({{ reconciledExpenses().length }})
+      </button>
+    </div>
 
-        <div class="match-column">
-          <h3>Unmatched Bank Transactions</h3>
-          <div class="match-list">
-            <div *ngFor="let tx of unmatchedBankTransactions()" 
-                 class="match-item"
-                 [class.selected]="selectedTransaction()?.id === tx.id"
-                 (click)="selectTransaction(tx)">
-              <div class="match-item-header">
-                <strong>{{ tx.description || 'Unknown' }}</strong>
-                <span class="amount">${{ tx.amount | number: '1.2-2' }}</span>
-              </div>
-              <div class="match-item-details">
-                <small>{{ tx.transactionDate | date: 'short' }}</small>
-              </div>
-            </div>
-            <div *ngIf="unmatchedBankTransactions().length === 0" class="empty-list">
-              No unmatched bank transactions
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="match-actions" *ngIf="selectedPayment() && selectedTransaction()">
-        <button type="button" class="btn-primary" (click)="createManualMatch()" [disabled]="isMatching()">
-          {{ isMatching() ? 'Matching...' : 'Match Selected Items' }}
+    <!-- Match Button -->
+    @if (selectedExpense() && selectedExpenseTransaction() && !showMatched()) {
+      <div class="match-button-container" style="margin-bottom: 1rem; position: sticky; top: 0; z-index: 10; background: white; padding: 1rem 0; border-bottom: 1px solid #e0e0e0;">
+        <button 
+          class="match-button"
+          [disabled]="isMatchingExpense()"
+          (click)="createExpenseMatch()">
+          {{ isMatchingExpense() ? 'Matching...' : 'Match Selected' }}
         </button>
-        <button type="button" class="btn-secondary" (click)="clearSelection()">
+        <button 
+          class="clear-button"
+          [disabled]="isMatchingExpense()"
+          (click)="clearExpenseSelection()">
           Clear Selection
         </button>
       </div>
-    </section>
+    }
+    <div class="reconciliation-grid">
+      <!-- Unreconciled Expenses -->
+      <div class="section">
+        <h3>Unreconciled Expenses</h3>
+        @if (unreconciledExpenses().length === 0) {
+          <p class="empty-state">All expenses have been reconciled!</p>
+        } @else {
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Vendor</th>
+                  <th>Category</th>
+                  <th>Amount</th>
+                  <th>Reference</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (expense of unreconciledExpenses(); track expense.id) {
+                  <tr 
+                    [class.selected]="selectedExpense()?.id === expense.id"
+                    (click)="selectExpense(expense)"
+                    class="clickable-row">
+                    <td>{{ expense.expenseDate | date:'short' }}</td>
+                    <td>{{ expense.vendorName }}</td>
+                    <td>{{ expense.category }}</td>
+                    <td class="amount negative">{{ expense.amount | currency }}</td>
+                    <td>{{ expense.referenceNumber || '-' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
 
-    <section class="card">
-      <h2>All Transactions</h2>
+      <!-- Bank Transactions (Debits) -->
+      <div class="section">
+        <h3>Bank Transactions (Debits)</h3>
+        @if (debitTransactions().length === 0) {
+          <p class="empty-state">No unmatched debit transactions</p>
+        } @else {
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Description</th>
+                  <th>Amount</th>
+                  <th>Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (tx of debitTransactions(); track tx.transactionId) {
+                  <tr 
+                    [class.selected]="selectedExpenseTransaction()?.transactionId === tx.transactionId"
+                    (click)="selectExpenseTransaction(tx)"
+                    class="clickable-row">
+                    <td>{{ tx.transactionDate | date:'short' }}</td>
+                    <td>{{ tx.description }}</td>
+                    <td class="amount negative">{{ tx.amount | currency }}</td>
+                    <td class="amount">{{ tx.runningBalance | currency }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
 
-      <table *ngIf="matches().length; else noMatches">
-        <thead>
-          <tr>
-            <th>Status</th>
-            <th>Payment Info</th>
-            <th>Bank Transaction</th>
-            <th>Amount</th>
-            <th>Reason</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let m of matches()">
-            <td>
-              <span class="badge" [ngClass]="badgeClass(m.status)">
-                {{ m.status }}
-              </span>
-            </td>
-            <td>
-              <div *ngIf="m.payment; else noPayment" class="data-cell">
-                <div>{{ m.payment?.guestName || 'Unknown' }}</div>
-                <small>{{ m.payment?.reservationId || '—' }}</small>
-              </div>
-              <ng-template #noPayment>—</ng-template>
-            </td>
-            <td>
-              <div *ngIf="m.bankTransaction; else noBank" class="data-cell">
-                {{ m.bankTransaction?.description || '—' }}
-              </div>
-              <ng-template #noBank>—</ng-template>
-            </td>
-            <td>{{ m.differenceAmount | number: '1.2-2' }}</td>
-            <td><small>{{ m.reason || '—' }}</small></td>
-          </tr>
-        </tbody>
-      </table>
+  <!-- Income Reconciliation Tab -->
+  <div *ngIf="activeTab() === 'income'" class="tab-content">
+    <!-- View Toggle -->
+    <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
+      <button 
+        class="btn" 
+        [class.btn-primary]="!showMatched()"
+        [class.btn-secondary]="showMatched()"
+        (click)="showMatched.set(false)">
+        Unmatched ({{ unreconciledIncome().length }})
+      </button>
+      <button 
+        class="btn"
+        [class.btn-primary]="showMatched()"
+        [class.btn-secondary]="!showMatched()"
+        (click)="showMatched.set(true)">
+        Matched ({{ reconciledIncome().length }})
+      </button>
+    </div>
 
-      <ng-template #noMatches>
-        <p class="empty">No unmatched transactions found.</p>
-      </ng-template>
-    </section>
-  </main>
+    <!-- Match Button -->
+    @if (selectedIncome() && selectedIncomeTransaction() && !showMatched()) {
+      <div class="match-button-container" style="margin-bottom: 1rem; position: sticky; top: 0; z-index: 10; background: white; padding: 1rem 0; border-bottom: 1px solid #e0e0e0;">
+        <button 
+          class="match-button"
+          [disabled]="isMatchingIncome()"
+          (click)="createIncomeMatch()">
+          {{ isMatchingIncome() ? 'Matching...' : 'Match Selected' }}
+        </button>
+        <button 
+          class="clear-button"
+          [disabled]="isMatchingIncome()"
+          (click)="clearIncomeSelection()">
+          Clear Selection
+        </button>
+      </div>
+    }
+    <div class="reconciliation-grid">
+      <!-- Unreconciled Income -->
+      <div class="section">
+        <h3>{{ showMatched() ? 'Reconciled' : 'Unreconciled' }} Income</h3>
+        @if (showMatched() && reconciledIncome().length === 0) {
+          <p class="empty-state">No reconciled income yet!</p>
+        } @else if (!showMatched() && unreconciledIncome().length === 0) {
+          <p class="empty-state">All income has been reconciled!</p>
+        } @else {
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Source</th>
+                  <th>Category</th>
+                  <th>Amount</th>
+                  <th>Reference</th>
+                  @if (showMatched()) {
+                    <th>Actions</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (income of showMatched() ? reconciledIncome() : unreconciledIncome(); track income.id) {
+                  <tr 
+                    [class.selected]="!showMatched() && selectedIncome()?.id === income.id"
+                    (click)="!showMatched() && selectIncome(income)"
+                    [class.clickable-row]="!showMatched()">
+                    <td>{{ income.incomeDate | date:'short' }}</td>
+                    <td>{{ income.source }}</td>
+                    <td>{{ income.category }}</td>
+                    <td class="amount positive">{{ income.amount | currency }}</td>
+                    <td>{{ income.referenceNumber || '-' }}</td>
+                    @if (showMatched()) {
+                      <td>
+                        <button 
+                          class="btn-link" 
+                          (click)="unmatchIncome(income.id)">
+                          Unmatch
+                        </button>
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
 
-  <!-- Empty state when everything is matched -->
-  <div class="empty-state" *ngIf="!isLoading() && summary() && unmatchedCount() === 0">
-    <div class="empty-state-icon">✓</div>
-    <h3>All Transactions Reconciled</h3>
-    <p>Everything looks good! All payments are matched with bank transactions.</p>
+      <!-- Bank Transactions (Credits) -->
+      <div class="section">
+        <h3>Bank Transactions (Credits)</h3>
+        @if (creditTransactions().length === 0) {
+          <p class="empty-state">No unmatched credit transactions</p>
+        } @else {
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Description</th>
+                  <th>Amount</th>
+                  <th>Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (tx of creditTransactions(); track tx.transactionId) {
+                  <tr 
+                    [class.selected]="selectedIncomeTransaction()?.transactionId === tx.transactionId"
+                    (click)="selectIncomeTransaction(tx)"
+                    class="clickable-row">
+                    <td>{{ tx.transactionDate | date:'short' }}</td>
+                    <td>{{ tx.description }}</td>
+                    <td class="amount positive">{{ tx.amount | currency }}</td>
+                    <td class="amount">{{ tx.runningBalance | currency }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
   </div>
 </div>

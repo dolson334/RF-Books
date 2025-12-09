@@ -1,26 +1,24 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { Payment, ReconciliationMatch, ReconciliationSummary } from './reconciliation.models';
+import { Payment, ReconciliationMatch, ReconciliationSummary, Expense, Income } from './reconciliation.models';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ReconciliationService {
   private readonly baseUrl = 'http://localhost:8081/api/reconciliation';
+  private readonly expenseUrl = 'http://localhost:8081/api/expenses';
+  private readonly incomeUrl = 'http://localhost:8081/api/income';
 
   constructor(private http: HttpClient) {}
 
   getLatestSummary(): Observable<ReconciliationSummary> {
-    return this.http.get<ReconciliationSummary>(`${this.baseUrl}/latest`);
-  }
-
-  getLatestDetails(): Observable<ReconciliationMatch[]> {
-    return this.http.get<ReconciliationMatch[]>(`${this.baseUrl}/latest/details`);
+    return this.http.get<ReconciliationSummary>(`${this.baseUrl}/summary`);
   }
 
   runNow(): Observable<ReconciliationSummary> {
-    return this.http.post<ReconciliationSummary>(`${this.baseUrl}/run-now`, {});
+    return this.http.post<ReconciliationSummary>(`${this.baseUrl}/refresh`, {});
   }
 
   getPayments(from?: string, to?: string): Observable<Payment[]> {
@@ -50,5 +48,45 @@ export class ReconciliationService {
 
   getManualMatches(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/matches`);
+  }
+
+  // Expense reconciliation
+  getExpenses(): Observable<Expense[]> {
+    return this.http.get<Expense[]>(this.expenseUrl);
+  }
+
+  createManualExpenseMatch(expenseId: number, transactionId: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/match/expense`, {
+      expenseId,
+      transactionId
+    });
+  }
+
+  deleteManualExpenseMatch(expenseId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/match/expense/${expenseId}`);
+  }
+
+  getManualExpenseMatches(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/matches/expenses`);
+  }
+
+  // Income reconciliation
+  getIncome(): Observable<Income[]> {
+    return this.http.get<Income[]>(this.incomeUrl);
+  }
+
+  createManualIncomeMatch(incomeId: number, transactionId: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/match/income`, {
+      incomeId,
+      transactionId
+    });
+  }
+
+  deleteManualIncomeMatch(incomeId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/match/income/${incomeId}`);
+  }
+
+  getManualIncomeMatches(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/matches/income`);
   }
 }

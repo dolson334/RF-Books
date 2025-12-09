@@ -91,28 +91,28 @@ CREATE TABLE IF NOT EXISTS plaid_transactions (
 CREATE INDEX idx_plaid_tx_user_date ON plaid_transactions(user_id, date);
 CREATE INDEX idx_plaid_tx_transaction_id ON plaid_transactions(transaction_id);
 
--- Payments
-CREATE TABLE IF NOT EXISTS payments (
-    id BIGSERIAL PRIMARY KEY,
-    user_id VARCHAR(255) NOT NULL,
-    external_id VARCHAR(255) NOT NULL UNIQUE,
-    amount DECIMAL(10, 2) NOT NULL,
-    currency VARCHAR(3) NOT NULL DEFAULT 'USD',
-    payment_date TIMESTAMP NOT NULL,
-    method VARCHAR(50),
-    last4 VARCHAR(4),
-    guest_name VARCHAR(255),
-    reservation_id VARCHAR(100),
-    reconciled BOOLEAN DEFAULT FALSE,
-    source VARCHAR(50) DEFAULT 'rfbooks',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- Payments (deprecated - now handled through income table)
+-- CREATE TABLE IF NOT EXISTS payments (
+--     id BIGSERIAL PRIMARY KEY,
+--     user_id VARCHAR(255) NOT NULL,
+--     external_id VARCHAR(255) NOT NULL UNIQUE,
+--     amount DECIMAL(10, 2) NOT NULL,
+--     currency VARCHAR(3) NOT NULL DEFAULT 'USD',
+--     payment_date TIMESTAMP NOT NULL,
+--     method VARCHAR(50),
+--     last4 VARCHAR(4),
+--     guest_name VARCHAR(255),
+--     reservation_id VARCHAR(100),
+--     reconciled BOOLEAN DEFAULT FALSE,
+--     source VARCHAR(50) DEFAULT 'rfbooks',
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- );
+-- 
+-- CREATE INDEX idx_payments_user_date ON payments(user_id, payment_date);
+-- CREATE INDEX idx_payments_external_id ON payments(external_id);
 
-CREATE INDEX idx_payments_user_date ON payments(user_id, payment_date);
-CREATE INDEX idx_payments_external_id ON payments(external_id);
-
--- Reconciliation Runs
+-- Reconciliation Runs - stores summary of reconciliation state at each refresh
 CREATE TABLE IF NOT EXISTS reconciliation_runs (
     id BIGSERIAL PRIMARY KEY,
     user_id VARCHAR(255) NOT NULL,
@@ -132,22 +132,56 @@ CREATE TABLE IF NOT EXISTS reconciliation_runs (
 
 CREATE INDEX idx_recon_run_user_date ON reconciliation_runs(user_id, run_at DESC);
 
--- Manual Matches
-CREATE TABLE IF NOT EXISTS manual_matches (
+-- Manual Matches (deprecated - now handled through manual_match_income)
+-- CREATE TABLE IF NOT EXISTS manual_matches (
+--     id BIGSERIAL PRIMARY KEY,
+--     user_id VARCHAR(255) NOT NULL,
+--     payment_id VARCHAR(255) NOT NULL,
+--     transaction_id VARCHAR(255) NOT NULL,
+--     matched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     matched_by VARCHAR(255),
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     CONSTRAINT uk_manual_match_payment UNIQUE (user_id, payment_id),
+--     CONSTRAINT uk_manual_match_transaction UNIQUE (user_id, transaction_id)
+-- );
+-- 
+-- CREATE INDEX idx_manual_match_user_id ON manual_matches(user_id);
+-- CREATE INDEX idx_manual_match_payment ON manual_matches(payment_id);
+-- CREATE INDEX idx_manual_match_transaction ON manual_matches(transaction_id);
+
+-- Manual Expense Matches (user-confirmed expense-to-transaction matches)
+CREATE TABLE IF NOT EXISTS manual_match_expenses (
     id BIGSERIAL PRIMARY KEY,
     user_id VARCHAR(255) NOT NULL,
-    payment_id VARCHAR(255) NOT NULL,
+    expense_id BIGINT NOT NULL,
     transaction_id VARCHAR(255) NOT NULL,
-    matched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    matched_at TIMESTAMP NOT NULL,
     matched_by VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_manual_match_payment UNIQUE (user_id, payment_id),
-    CONSTRAINT uk_manual_match_transaction UNIQUE (user_id, transaction_id)
+    UNIQUE(user_id, expense_id),
+    UNIQUE(user_id, transaction_id)
 );
 
-CREATE INDEX idx_manual_match_user ON manual_matches(user_id);
-CREATE INDEX idx_manual_match_payment ON manual_matches(payment_id);
-CREATE INDEX idx_manual_match_transaction ON manual_matches(transaction_id);
+CREATE INDEX idx_manual_match_expense_user_id ON manual_match_expenses(user_id);
+CREATE INDEX idx_manual_match_expense_expense_id ON manual_match_expenses(expense_id);
+CREATE INDEX idx_manual_match_expense_transaction ON manual_match_expenses(transaction_id);
+
+-- Manual Income Matches (user-confirmed income-to-transaction matches)
+CREATE TABLE IF NOT EXISTS manual_match_income (
+    id BIGSERIAL PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    income_id BIGINT NOT NULL,
+    transaction_id VARCHAR(255) NOT NULL,
+    matched_at TIMESTAMP NOT NULL,
+    matched_by VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, income_id),
+    UNIQUE(user_id, transaction_id)
+);
+
+CREATE INDEX idx_manual_match_income_user_id ON manual_match_income(user_id);
+CREATE INDEX idx_manual_match_income_income_id ON manual_match_income(income_id);
+CREATE INDEX idx_manual_match_income_transaction ON manual_match_income(transaction_id);
 
 -- Expenses
 CREATE TABLE IF NOT EXISTS expenses (
@@ -163,6 +197,7 @@ CREATE TABLE IF NOT EXISTS expenses (
     reference_number VARCHAR(100),
     description TEXT,
     notes TEXT,
+    reconciled BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -198,20 +233,20 @@ CREATE INDEX idx_income_source ON income(source);
 -- INSERT TEST DATA
 -- ============================================
 
--- Insert test payments
-INSERT INTO payments (user_id, external_id, amount, currency, payment_date, method, last4, guest_name, reservation_id, reconciled, source, created_at, updated_at)
-VALUES
-  ('default-user', 'pi_001', 178.50, 'USD', NOW() - INTERVAL '1 day', 'Card', '4242', 'Sarah Thompson', 'RV-1245', true, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_002', 642.00, 'USD', NOW() - INTERVAL '2 days', 'ACH', NULL, 'Mark & Jenna Lewis', 'CAB-87', true, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_003', 82.00, 'USD', NOW() - INTERVAL '3 days', 'Card', '1111', 'Daniel H.', 'TENT-331', false, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_004', 245.75, 'USD', NOW() - INTERVAL '4 days', 'Card', '5678', 'Jessica Martinez', 'CAB-92', false, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_005', 156.00, 'USD', NOW() - INTERVAL '5 days', 'ACH', NULL, 'Robert Chen', 'RV-1250', false, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_006', 320.00, 'USD', NOW() - INTERVAL '6 days', 'Card', '9012', 'Emily & James Wilson', 'TENT-335', false, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_007', 189.00, 'USD', NOW() - INTERVAL '7 days', 'Card', '3456', 'Michael Johnson', 'RV-1255', false, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_008', 95.50, 'USD', NOW() - INTERVAL '8 days', 'Card', '7890', 'Amanda Brooks', 'TENT-340', false, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_009', 412.00, 'USD', NOW() - INTERVAL '9 days', 'ACH', NULL, 'David & Lisa Parker', 'CAB-95', false, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_010', 275.25, 'USD', NOW() - INTERVAL '10 days', 'Card', '2468', 'Christopher Lee', 'RV-1260', false, 'rfbooks', NOW(), NOW())
-ON CONFLICT (external_id) DO NOTHING;
+-- Insert test payments (deprecated - use income table instead)
+-- INSERT INTO payments (user_id, external_id, amount, currency, payment_date, method, last4, guest_name, reservation_id, reconciled, source, created_at, updated_at)
+-- VALUES
+--   ('default-user', 'pi_001', 178.50, 'USD', NOW() - INTERVAL '1 day', 'Card', '4242', 'Sarah Thompson', 'RV-1245', true, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_002', 642.00, 'USD', NOW() - INTERVAL '2 days', 'ACH', NULL, 'Mark & Jenna Lewis', 'CAB-87', true, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_003', 82.00, 'USD', NOW() - INTERVAL '3 days', 'Card', '1111', 'Daniel H.', 'TENT-331', false, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_004', 245.75, 'USD', NOW() - INTERVAL '4 days', 'Card', '5678', 'Jessica Martinez', 'CAB-92', false, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_005', 156.00, 'USD', NOW() - INTERVAL '5 days', 'ACH', NULL, 'Robert Chen', 'RV-1250', false, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_006', 320.00, 'USD', NOW() - INTERVAL '6 days', 'Card', '9012', 'Emily & James Wilson', 'TENT-335', false, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_007', 189.00, 'USD', NOW() - INTERVAL '7 days', 'Card', '3456', 'Michael Johnson', 'RV-1255', false, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_008', 95.50, 'USD', NOW() - INTERVAL '8 days', 'Card', '7890', 'Amanda Brooks', 'TENT-340', false, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_009', 412.00, 'USD', NOW() - INTERVAL '9 days', 'ACH', NULL, 'David & Lisa Parker', 'CAB-95', false, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_010', 275.25, 'USD', NOW() - INTERVAL '10 days', 'Card', '2468', 'Christopher Lee', 'RV-1260', false, 'rfbooks', NOW(), NOW())
+-- ON CONFLICT (external_id) DO NOTHING;
 
 -- Insert test Plaid transactions
 INSERT INTO plaid_transactions (user_id, transaction_id, account_id, amount, date, name, merchant_name, pending, created_at)
@@ -286,23 +321,23 @@ VALUES
   ('default-user', CURRENT_DATE - 5, 800.00, 'Software Vendors', 'Software', 'Card', NULL, NULL, 'Software Subscriptions', NOW(), NOW()),
   ('default-user', CURRENT_DATE - 7, 700.00, 'Various Vendors', 'Miscellaneous', 'Card', NULL, NULL, 'Misc Expenses', NOW(), NOW());
 
--- Add more payment data for income tracking (Room Revenue, F&B, Activities)
-INSERT INTO payments (user_id, external_id, amount, currency, payment_date, method, last4, guest_name, reservation_id, reconciled, source, created_at, updated_at)
-VALUES
-  ('default-user', 'pi_room_001', 1500.00, 'USD', CURRENT_DATE - 1, 'Card', '4242', 'Smith Family', 'ROOM-101', true, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_room_002', 2000.00, 'USD', CURRENT_DATE - 2, 'Card', '5555', 'Johnson Family', 'ROOM-203', true, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_room_003', 1800.00, 'USD', CURRENT_DATE - 3, 'ACH', NULL, 'Williams Family', 'ROOM-105', true, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_room_004', 2500.00, 'USD', CURRENT_DATE - 5, 'Card', '6789', 'Brown Family', 'CABIN-5', true, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_room_005', 3200.00, 'USD', CURRENT_DATE - 7, 'Card', '1234', 'Davis Family', 'SUITE-301', true, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_fb_001', 3500.00, 'USD', CURRENT_DATE - 1, 'Card', '9876', 'Restaurant Sales', 'REST-DAILY', true, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_fb_002', 1800.00, 'USD', CURRENT_DATE - 2, 'Card', '5432', 'Bar Sales', 'BAR-DAILY', true, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_fb_003', 5000.00, 'USD', CURRENT_DATE - 3, 'ACH', NULL, 'Catering Event', 'EVENT-001', true, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_fb_004', 2200.00, 'USD', CURRENT_DATE - 5, 'Card', '1111', 'Room Service', 'RS-DAILY', true, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_act_001', 800.00, 'USD', CURRENT_DATE - 2, 'Card', '2222', 'Guided Hiking Tour', 'ACT-HIKE', true, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_act_002', 1200.00, 'USD', CURRENT_DATE - 3, 'Card', '3333', 'Kayak Rentals', 'ACT-KAYAK', true, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_act_003', 950.00, 'USD', CURRENT_DATE - 4, 'Card', '4444', 'Mountain Biking', 'ACT-BIKE', true, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_act_004', 2500.00, 'USD', CURRENT_DATE - 6, 'Card', '5555', 'Spa Treatments', 'SPA-DAILY', true, 'rfbooks', NOW(), NOW())
-ON CONFLICT (external_id) DO NOTHING;
+-- Add more payment data (deprecated - use income table)
+-- INSERT INTO payments (user_id, external_id, amount, currency, payment_date, method, last4, guest_name, reservation_id, reconciled, source, created_at, updated_at)
+-- VALUES
+--   ('default-user', 'pi_room_001', 1500.00, 'USD', CURRENT_DATE - 1, 'Card', '4242', 'Smith Family', 'ROOM-101', true, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_room_002', 2000.00, 'USD', CURRENT_DATE - 2, 'Card', '5555', 'Johnson Family', 'ROOM-203', true, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_room_003', 1800.00, 'USD', CURRENT_DATE - 3, 'ACH', NULL, 'Williams Family', 'ROOM-105', true, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_room_004', 2500.00, 'USD', CURRENT_DATE - 5, 'Card', '6789', 'Brown Family', 'CABIN-5', true, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_room_005', 3200.00, 'USD', CURRENT_DATE - 7, 'Card', '1234', 'Davis Family', 'SUITE-301', true, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_fb_001', 3500.00, 'USD', CURRENT_DATE - 1, 'Card', '9876', 'Restaurant Sales', 'REST-DAILY', true, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_fb_002', 1800.00, 'USD', CURRENT_DATE - 2, 'Card', '5432', 'Bar Sales', 'BAR-DAILY', true, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_fb_003', 5000.00, 'USD', CURRENT_DATE - 3, 'ACH', NULL, 'Catering Event', 'EVENT-001', true, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_fb_004', 2200.00, 'USD', CURRENT_DATE - 5, 'Card', '1111', 'Room Service', 'RS-DAILY', true, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_act_001', 800.00, 'USD', CURRENT_DATE - 2, 'Card', '2222', 'Guided Hiking Tour', 'ACT-HIKE', true, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_act_002', 1200.00, 'USD', CURRENT_DATE - 3, 'Card', '3333', 'Kayak Rentals', 'ACT-KAYAK', true, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_act_003', 950.00, 'USD', CURRENT_DATE - 4, 'Card', '4444', 'Mountain Biking', 'ACT-BIKE', true, 'rfbooks', NOW(), NOW()),
+--   ('default-user', 'pi_act_004', 2500.00, 'USD', CURRENT_DATE - 6, 'Card', '5555', 'Spa Treatments', 'SPA-DAILY', true, 'rfbooks', NOW(), NOW())
+-- ON CONFLICT (external_id) DO NOTHING;
 
 -- Insert test income records
 INSERT INTO income (user_id, income_date, amount, source, category, payment_method, account_id, reference_number, description, notes, reconciled, created_at, updated_at)

@@ -1,0 +1,100 @@
+package com.rfbooks.entities;
+
+import jakarta.persistence.*;
+import java.time.Instant;
+
+@Entity
+@Table(name = "manual_match_expenses")
+public class ManualMatchExpense {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "user_id", nullable = false)
+    private String userId;
+
+    @Column(name = "expense_id", nullable = false)
+    private Long expenseId;
+
+    @Column(name = "transaction_id", nullable = false)
+    private String transactionId;
+
+    @Column(name = "matched_at", nullable = false)
+    private Instant matchedAt;
+
+    @Column(name = "matched_by")
+    private String matchedBy;
+
+    @Column(name = "created_at")
+    private Instant createdAt;
+
+    public ManualMatchExpense() {
+        this.matchedAt = Instant.now();
+        this.createdAt = Instant.now();
+    }
+
+    public ManualMatchExpense(String userId, Long expenseId, String transactionId) {
+        this();
+        this.userId = userId;
+        this.expenseId = expenseId;
+        this.transactionId = transactionId;
+    }
+
+    // Getters and setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public Long getExpenseId() {
+        return expenseId;
+    }
+
+    public void setExpenseId(Long expenseId) {
+        this.expenseId = expenseId;
+    }
+
+    public String getTransactionId() {
+        return transactionId;
+    }
+
+    public void setTransactionId(String transactionId) {
+        this.transactionId = transactionId;
+    }
+
+    public Instant getMatchedAt() {
+        return matchedAt;
+    }
+
+    public void setMatchedAt(Instant matchedAt) {
+        this.matchedAt = matchedAt;
+    }
+
+    public String getMatchedBy() {
+        return matchedBy;
+    }
+
+    public void setMatchedBy(String matchedBy) {
+        this.matchedBy = matchedBy;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+}

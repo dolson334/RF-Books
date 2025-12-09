@@ -15,6 +15,30 @@ export interface Payment {
   source: DataSource;
 }
 
+export interface Expense {
+  id: number;
+  expenseDate: string;
+  amount: number;
+  vendorName?: string;
+  category?: string;
+  paymentMethod?: string;
+  referenceNumber?: string;
+  description?: string;
+  reconciled: boolean;
+}
+
+export interface Income {
+  id: number;
+  incomeDate: string;
+  amount: number;
+  source?: string;
+  category?: string;
+  paymentMethod?: string;
+  referenceNumber?: string;
+  description?: string;
+  reconciled: boolean;
+}
+
 export type ReconciliationStatus =
   | 'MATCHED'
   | 'MANUAL_MATCH'

@@ -45,6 +45,9 @@ public class Expense {
     @Column(name = "notes")
     private String notes;
 
+    @Column(name = "reconciled")
+    private Boolean reconciled;
+
     @Column(name = "created_at")
     private Instant createdAt;
 
@@ -55,6 +58,7 @@ public class Expense {
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
         this.currency = "USD";
+        this.reconciled = false;
     }
 
     // Getters and setters
@@ -168,5 +172,13 @@ public class Expense {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Boolean getReconciled() {
+        return reconciled;
+    }
+
+    public void setReconciled(Boolean reconciled) {
+        this.reconciled = reconciled;
     }
 }

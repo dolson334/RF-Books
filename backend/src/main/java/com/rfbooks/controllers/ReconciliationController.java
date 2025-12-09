@@ -1,13 +1,10 @@
 package com.rfbooks.controllers;
 
-import com.rfbooks.dtos.ReconciliationSummary;
-import com.rfbooks.entities.ManualMatch;
+import com.rfbooks.entities.ManualMatchExpense;
+import com.rfbooks.entities.ManualMatchIncome;
 import com.rfbooks.dtos.ManualMatchRequest;
-import com.rfbooks.nonentities.Payment;
-import com.rfbooks.nonentities.ReconciliationMatch;
-import com.rfbooks.nonentities.ReconciliationRequest;
+import com.rfbooks.dtos.ReconciliationSummary;
 import com.rfbooks.services.ReconciliationService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -17,94 +14,63 @@ import java.util.List;
 public class ReconciliationController {
 
     private final ReconciliationService reconciliationService;
-    private final ObjectMapper objectMapper;
 
-    public ReconciliationController(ReconciliationService reconciliationService, ObjectMapper objectMapper) {
+    public ReconciliationController(ReconciliationService reconciliationService) {
         this.reconciliationService = reconciliationService;
-        this.objectMapper = objectMapper;
     }
 
-    @GetMapping("/latest")
-    public ResponseEntity<ReconciliationSummary> getLatestRun() {
-        return ResponseEntity.ok(reconciliationService.getLatestRunSummary().orElse(null));
+    @GetMapping("/summary")
+    public ResponseEntity<ReconciliationSummary> getReconciliationSummary() {
+        ReconciliationSummary summary = reconciliationService.getReconciliationSummary();
+        return ResponseEntity.ok(summary);
     }
 
-    @GetMapping("/latest/details")
-    public ResponseEntity<List<ReconciliationMatch>> getLatestRunDetails() {
-        try {
-            return reconciliationService.getLatestRun()
-                    .<ResponseEntity<List<ReconciliationMatch>>>map(run -> {
-                        try {
-                            List<ReconciliationMatch> matches = objectMapper.readValue(
-                                    run.getResultsJson(),
-                                    objectMapper.getTypeFactory().constructCollectionType(List.class, ReconciliationMatch.class)
-                            );
-                            return ResponseEntity.ok(matches);
-                        } catch (Exception e) {
-                            return ResponseEntity.status(500).build();
-                        }
-                    })
-                    .orElse(ResponseEntity.notFound().build());
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
+    @PostMapping("/refresh")
+    public ResponseEntity<ReconciliationSummary> refreshReconciliation() {
+        ReconciliationSummary summary = reconciliationService.getReconciliationSummary();
+        return ResponseEntity.ok(summary);
     }
 
-    @PostMapping("/run-now")
-    public ResponseEntity<ReconciliationSummary> runNow() {
-        var run = reconciliationService.runAndSaveReconciliation();
-        return ResponseEntity.ok(new ReconciliationSummary(
-                run.getId(),
-                run.getRunAt(),
-                run.getStartDate(),
-                run.getEndDate(),
-                run.getMatchedCount(),
-                run.getUnmatchedPaymentCount(),
-                run.getUnmatchedBankCount(),
-                run.getTotalPayments(),
-                run.getTotalBankTransactions(),
-                run.getStatus(),
-                run.getErrorMessage()
-        ));
-    }
-
-    // Keep existing endpoints for backward compatibility
-    @GetMapping("/payments")
-    public ResponseEntity<List<Payment>> getPayments(
-            @RequestParam(required = false) String from,
-            @RequestParam(required = false) String to) {
-        List<Payment> payments = reconciliationService.getPayments(from, to);
-        return ResponseEntity.ok(payments);
-    }
-
-    @PostMapping("/run")
-    public ResponseEntity<List<ReconciliationMatch>> runReconciliation(
-            @RequestBody ReconciliationRequest request) {
-        List<ReconciliationMatch> matches = reconciliationService.runReconciliation(
-                request.getFrom(),
-                request.getTo()
-        );
-        return ResponseEntity.ok(matches);
-    }
-
-    @PostMapping("/match")
-    public ResponseEntity<ManualMatch> createManualMatch(@RequestBody ManualMatchRequest request) {
-        ManualMatch match = reconciliationService.createManualMatch(
-                request.getPaymentId(),
+    // Expense manual matching endpoints
+    @PostMapping("/match/expense")
+    public ResponseEntity<ManualMatchExpense> createManualExpenseMatch(@RequestBody ManualMatchRequest request) {
+        ManualMatchExpense match = reconciliationService.createManualExpenseMatch(
+                request.getExpenseId(),
                 request.getTransactionId()
         );
         return ResponseEntity.ok(match);
     }
 
-    @DeleteMapping("/match/{paymentId}")
-    public ResponseEntity<Void> deleteManualMatch(@PathVariable String paymentId) {
-        reconciliationService.deleteManualMatch(paymentId);
+    @DeleteMapping("/match/expense/{expenseId}")
+    public ResponseEntity<Void> deleteManualExpenseMatch(@PathVariable Long expenseId) {
+        reconciliationService.deleteManualExpenseMatch(expenseId);
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/matches")
-    public ResponseEntity<List<ManualMatch>> getManualMatches() {
-        return ResponseEntity.ok(reconciliationService.getManualMatches());
+    @GetMapping("/matches/expenses")
+    public ResponseEntity<List<ManualMatchExpense>> getManualExpenseMatches() {
+        return ResponseEntity.ok(reconciliationService.getManualExpenseMatches());
+    }
+
+    // Income manual matching endpoints
+    @PostMapping("/match/income")
+    public ResponseEntity<ManualMatchIncome> createManualIncomeMatch(@RequestBody ManualMatchRequest request) {
+        ManualMatchIncome match = reconciliationService.createManualIncomeMatch(
+                request.getIncomeId(),
+                request.getTransactionId()
+        );
+        return ResponseEntity.ok(match);
+    }
+
+    @DeleteMapping("/match/income/{incomeId}")
+    public ResponseEntity<Void> deleteManualIncomeMatch(@PathVariable Long incomeId) {
+        reconciliationService.deleteManualIncomeMatch(incomeId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/matches/income")
+    public ResponseEntity<List<ManualMatchIncome>> getManualIncomeMatches() {
+        return ResponseEntity.ok(reconciliationService.getManualIncomeMatches());
     }
 }
 

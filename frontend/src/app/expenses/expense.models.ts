@@ -9,6 +9,7 @@ export interface Expense {
   referenceNumber?: string;
   description?: string;
   notes?: string;
+  reconciled?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
