@@ -4,10 +4,12 @@ import com.plaid.client.ApiClient;
 import com.plaid.client.model.*;
 import com.plaid.client.request.PlaidApi;
 import com.rfbooks.entities.PlaidConnection;
+import com.rfbooks.entities.PlaidTransactionEntity;
 import com.rfbooks.nonentities.ExchangePublicTokenRequest;
 import com.rfbooks.nonentities.LinkTokenResponse;
 import com.rfbooks.nonentities.PlaidTransaction;
 import com.rfbooks.repos.PlaidConnectionRepository;
+import com.rfbooks.repos.PlaidTransactionRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -25,14 +27,17 @@ public class PlaidService {
     private final String clientId;
     private final String secret;
     private final PlaidConnectionRepository connectionRepository;
+    private final PlaidTransactionRepository transactionRepository;
 
     public PlaidService(@Value("${plaid.client-id}") String clientId,
                         @Value("${plaid.secret}") String secret,
                         @Value("${plaid.environment:sandbox}") String environment,
-                        PlaidConnectionRepository connectionRepository) {
+                        PlaidConnectionRepository connectionRepository,
+                        PlaidTransactionRepository transactionRepository) {
         this.clientId = clientId;
         this.secret = secret;
         this.connectionRepository = connectionRepository;
+        this.transactionRepository = transactionRepository;
 
         ApiClient apiClient = new ApiClient();
 
@@ -122,6 +127,24 @@ public class PlaidService {
         // Get access token from database
         String userId = "default-user"; // TODO: Get from authentication context
 
+        // First, try to get from local database (for testing/development)
+        try {
+            LocalDate start = LocalDate.parse(startDate.substring(0, 10));
+            LocalDate end = LocalDate.parse(endDate.substring(0, 10));
+            
+            List<PlaidTransactionEntity> localTransactions = 
+                transactionRepository.findByUserIdAndDateRange(userId, start, end);
+            
+            if (!localTransactions.isEmpty()) {
+                return localTransactions.stream()
+                        .map(this::mapEntityToPlaidTransaction)
+                        .collect(Collectors.toList());
+            }
+        } catch (Exception e) {
+            // If local query fails, try Plaid API
+        }
+
+        // If no local transactions, try Plaid API
         PlaidConnection connection = connectionRepository
                 .findByUserIdAndActiveTrue(userId)
                 .orElseThrow(() -> new RuntimeException(
@@ -157,6 +180,18 @@ public class PlaidService {
         } catch (IOException e) {
             throw new RuntimeException("Error getting transactions", e);
         }
+    }
+
+    private PlaidTransaction mapEntityToPlaidTransaction(PlaidTransactionEntity entity) {
+        PlaidTransaction tx = new PlaidTransaction();
+        tx.setTransactionId(entity.getTransactionId());
+        tx.setAccountId(entity.getAccountId());
+        tx.setAmount(entity.getAmount());
+        tx.setDate(entity.getDate().toString());
+        tx.setName(entity.getName());
+        tx.setMerchantName(entity.getMerchantName());
+        tx.setPending(entity.getPending());
+        return tx;
     }
 
     private PlaidTransaction mapToPlaidTransaction(Transaction plaidTx) {
