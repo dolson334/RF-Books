@@ -2,12 +2,14 @@ package com.rfbooks.services;
 
 import com.rfbooks.dtos.ReconciliationSummary;
 import com.rfbooks.entities.ManualMatch;
+import com.rfbooks.entities.PaymentEntity;
 import com.rfbooks.entities.ReconciliationRun;
 import com.rfbooks.nonentities.BankTransactionSummary;
 import com.rfbooks.nonentities.Payment;
 import com.rfbooks.nonentities.ReconciliationMatch;
 import com.rfbooks.nonentities.PlaidTransaction;
 import com.rfbooks.repos.ManualMatchRepository;
+import com.rfbooks.repos.PaymentRepository;
 import com.rfbooks.repos.ReconciliationRunRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
@@ -16,9 +18,11 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,39 +33,51 @@ public class ReconciliationService {
     private final PlaidService plaidService;
     private final ReconciliationRunRepository runRepository;
     private final ManualMatchRepository manualMatchRepository;
+    private final PaymentRepository paymentRepository;
     private final ObjectMapper objectMapper;
 
     public ReconciliationService(PlaidService plaidService, 
                                   ReconciliationRunRepository runRepository,
                                   ManualMatchRepository manualMatchRepository,
+                                  PaymentRepository paymentRepository,
                                   ObjectMapper objectMapper) {
         this.plaidService = plaidService;
         this.runRepository = runRepository;
         this.manualMatchRepository = manualMatchRepository;
+        this.paymentRepository = paymentRepository;
         this.objectMapper = objectMapper;
     }
 
     public List<Payment> getPayments(String from, String to) {
-        // TODO: Replace with actual database query
-        // For now, return empty list or mock data
-        List<Payment> payments = new ArrayList<>();
-
-        // Example payment
-        Payment payment = new Payment();
-        payment.setId(1L);
-        payment.setExternalId("pi_001");
-        payment.setAmount(178.50);
-        payment.setCurrency("USD");
-        payment.setPaymentDate(Instant.now().toString());
-        payment.setMethod("Card");
-        payment.setLast4("4242");
-        payment.setGuestName("Sarah Thompson");
-        payment.setReservationId("RV-1245");
-        payment.setReconciled(false);
-        payment.setSource("rfbooks");
-        payments.add(payment);
-
-        return payments;
+        try {
+            Instant startDate = Instant.parse(from + "T00:00:00Z");
+            Instant endDate = Instant.parse(to + "T23:59:59Z");
+            
+            List<PaymentEntity> entities = paymentRepository.findByUserIdAndDateRange(DEFAULT_USER_ID, startDate, endDate);
+            
+            // Convert entities to Payment DTOs
+            List<Payment> payments = new ArrayList<>();
+            for (PaymentEntity entity : entities) {
+                Payment payment = new Payment();
+                payment.setId(entity.getId());
+                payment.setExternalId(entity.getExternalId());
+                payment.setAmount(entity.getAmount());
+                payment.setCurrency(entity.getCurrency());
+                payment.setPaymentDate(entity.getPaymentDate().toString());
+                payment.setMethod(entity.getMethod());
+                payment.setLast4(entity.getLast4());
+                payment.setGuestName(entity.getGuestName());
+                payment.setReservationId(entity.getReservationId());
+                payment.setReconciled(entity.getReconciled());
+                payment.setSource(entity.getSource());
+                payments.add(payment);
+            }
+            
+            return payments;
+        } catch (Exception e) {
+            // If date parsing fails or query fails, return empty list
+            return new ArrayList<>();
+        }
     }
 
     public List<ReconciliationMatch> runReconciliation(String from, String to) {
@@ -98,6 +114,7 @@ public class ReconciliationService {
 
         // Perform matching logic
         List<ReconciliationMatch> matches = new ArrayList<>();
+        Set<String> matchedTransactionIds = new HashSet<>();
 
         // Simple matching: match by amount and date within 24 hours
         for (Payment payment : payments) {
@@ -105,7 +122,7 @@ public class ReconciliationService {
             match.setId(payment.getId());
             match.setPayment(payment);
 
-            BankTransactionSummary matchedTx = findMatchingTransaction(payment, bankTransactions, manualMatchMap);
+            BankTransactionSummary matchedTx = findMatchingTransaction(payment, bankTransactions, manualMatchMap, matchedTransactionIds);
 
             if (matchedTx != null) {
                 match.setStatus(manualMatchMap.containsKey(payment.getExternalId()) ? "MANUAL_MATCH" : "MATCHED");
@@ -113,6 +130,7 @@ public class ReconciliationService {
                 match.setDifferenceAmount(0.0);
                 match.setReason(manualMatchMap.containsKey(payment.getExternalId()) ? 
                     "Manually matched by user" : "Matched by date and amount");
+                matchedTransactionIds.add(matchedTx.getTransactionId());
             } else {
                 match.setStatus("UNMATCHED_PAYMENT");
                 match.setDifferenceAmount(payment.getAmount());
@@ -137,8 +155,8 @@ public class ReconciliationService {
         ReconciliationRun run = new ReconciliationRun();
         run.setUserId(DEFAULT_USER_ID);
         run.setRunAt(Instant.now());
-        run.setStartDate(start);
-        run.setEndDate(end);
+        run.setStartDate(startDate);
+        run.setEndDate(endDate);
         
         try {
             List<ReconciliationMatch> matches = runReconciliation(start, end);
@@ -207,7 +225,8 @@ public class ReconciliationService {
 
     private BankTransactionSummary findMatchingTransaction(Payment payment,
                                                            List<BankTransactionSummary> transactions,
-                                                           Map<String, String> manualMatches) {
+                                                           Map<String, String> manualMatches,
+                                                           Set<String> matchedTransactionIds) {
         // Check if there's a manual match first
         if (manualMatches.containsKey(payment.getExternalId())) {
             String matchedTxId = manualMatches.get(payment.getExternalId());
@@ -219,6 +238,11 @@ public class ReconciliationService {
         
         // Simple matching logic - you can make this more sophisticated
         for (BankTransactionSummary tx : transactions) {
+            // Skip already matched transactions
+            if (matchedTransactionIds.contains(tx.getTransactionId())) {
+                continue;
+            }
+            
             if (Math.abs(tx.getAmount() - payment.getAmount()) < 0.01) {
                 // Amounts match within 1 cent
                 return tx;

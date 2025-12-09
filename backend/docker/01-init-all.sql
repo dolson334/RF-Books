@@ -25,6 +25,40 @@ CREATE TABLE IF NOT EXISTS onboarding_progress (
     UNIQUE(user_id)
 );
 
+-- Chart of Accounts
+CREATE TABLE IF NOT EXISTS chart_of_accounts (
+    id BIGSERIAL PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    account_number VARCHAR(50) NOT NULL,
+    account_name VARCHAR(255) NOT NULL,
+    account_type VARCHAR(50) NOT NULL,
+    description VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, account_number)
+);
+
+CREATE INDEX idx_coa_user_id ON chart_of_accounts(user_id);
+CREATE INDEX idx_coa_type ON chart_of_accounts(account_type);
+
+-- Products and Services
+CREATE TABLE IF NOT EXISTS products_services (
+    id BIGSERIAL PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    description VARCHAR(500),
+    price DECIMAL(10, 2),
+    cost BIGINT,
+    sku VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, name)
+);
+
+CREATE INDEX idx_products_services_user_id ON products_services(user_id);
+CREATE INDEX idx_products_services_type ON products_services(type);
+
 -- Plaid Connections
 CREATE TABLE IF NOT EXISTS plaid_connections (
     id BIGSERIAL PRIMARY KEY,

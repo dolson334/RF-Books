@@ -1,12 +1,13 @@
 package com.rfbooks.dtos;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 public class ReconciliationSummary {
     private Long id;
     private Instant runAt;
-    private String startDate;
-    private String endDate;
+    private LocalDate startDate;
+    private LocalDate endDate;
     private Integer matchedCount;
     private Integer unmatchedPaymentCount;
     private Integer unmatchedBankCount;
@@ -18,7 +19,7 @@ public class ReconciliationSummary {
 
     public ReconciliationSummary() {}
 
-    public ReconciliationSummary(Long id, Instant runAt, String startDate, String endDate,
+    public ReconciliationSummary(Long id, Instant runAt, LocalDate startDate, LocalDate endDate,
                                   Integer matchedCount, Integer unmatchedPaymentCount, 
                                   Integer unmatchedBankCount, Integer totalPayments,
                                   Integer totalBankTransactions, String status, String errorMessage) {
@@ -53,19 +54,19 @@ public class ReconciliationSummary {
         this.runAt = runAt;
     }
 
-    public String getStartDate() {
+    public LocalDate getStartDate() {
         return startDate;
     }
 
-    public void setStartDate(String startDate) {
+    public void setStartDate(LocalDate startDate) {
         this.startDate = startDate;
     }
 
-    public String getEndDate() {
+    public LocalDate getEndDate() {
         return endDate;
     }
 
-    public void setEndDate(String endDate) {
+    public void setEndDate(LocalDate endDate) {
         this.endDate = endDate;
     }
 
