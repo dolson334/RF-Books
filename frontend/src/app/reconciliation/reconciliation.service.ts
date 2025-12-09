@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { Payment, ReconciliationMatch } from './reconciliation.models';
+import { Payment, ReconciliationMatch, ReconciliationSummary } from './reconciliation.models';
 
 @Injectable({
   providedIn: 'root',
@@ -10,6 +10,18 @@ export class ReconciliationService {
   private readonly baseUrl = 'http://localhost:8081/api/reconciliation';
 
   constructor(private http: HttpClient) {}
+
+  getLatestSummary(): Observable<ReconciliationSummary> {
+    return this.http.get<ReconciliationSummary>(`${this.baseUrl}/latest`);
+  }
+
+  getLatestDetails(): Observable<ReconciliationMatch[]> {
+    return this.http.get<ReconciliationMatch[]>(`${this.baseUrl}/latest/details`);
+  }
+
+  runNow(): Observable<ReconciliationSummary> {
+    return this.http.post<ReconciliationSummary>(`${this.baseUrl}/run-now`, {});
+  }
 
   getPayments(from?: string, to?: string): Observable<Payment[]> {
     const params: any = {};

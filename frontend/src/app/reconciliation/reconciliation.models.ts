@@ -50,3 +50,20 @@ export interface ReconciliationMatch {
   bankTransaction?: BankTransactionSummary | null;
   createdAt: string;
 }
+
+export interface ReconciliationSummary {
+  id: number;
+  runAt: string;
+  startDate: string;
+  endDate: string;
+  matchedCount: number;
+  unmatchedPaymentCount: number;
+  unmatchedBankCount: number;
+  totalPayments: number;
+  totalBankTransactions: number;
+  status: 'COMPLETED' | 'FAILED' | 'NO_BANK_CONNECTION';
+  errorMessage?: string;
+  hasIssues: boolean;
+}
+  createdAt: string;
+}
