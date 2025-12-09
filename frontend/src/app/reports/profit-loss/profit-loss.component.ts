@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, AfterViewInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -21,7 +21,7 @@ interface PLLineItem {
   templateUrl: './profit-loss.component.html',
   styleUrls: ['./profit-loss.component.scss']
 })
-export class ProfitLossComponent implements OnInit {
+export class ProfitLossComponent implements OnInit, AfterViewInit {
   startDate = signal<string>('');
   endDate = signal<string>('');
   isLoading = signal<boolean>(false);
@@ -39,6 +39,10 @@ export class ProfitLossComponent implements OnInit {
     this.endDate.set(end.toISOString().split('T')[0]);
     
     this.loadReport();
+  }
+
+  ngAfterViewInit(): void {
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
   loadReport(): void {
@@ -133,6 +137,10 @@ export class ProfitLossComponent implements OnInit {
 
   formatPercent(value: number): string {
     return `${value.toFixed(1)}%`;
+  }
+
+  getCurrentDate(): string {
+    return new Date().toLocaleDateString();
   }
 
   exportReport(): void {

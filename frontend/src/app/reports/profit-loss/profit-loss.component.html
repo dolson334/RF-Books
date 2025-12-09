@@ -88,46 +88,7 @@
       </table>
 
       <div class="report-footer">
-        <p>Generated on {{ new Date().toLocaleDateString() }}</p>
-      </div>
-    </div>
-
-    <!-- Summary Cards -->
-    <div class="summary-cards">
-      <div class="summary-card revenue">
-        <div class="card-icon">💰</div>
-        <div class="card-content">
-          <span class="card-label">Total Revenue</span>
-          <span class="card-value">$125,000</span>
-          <span class="card-change positive">+12.5% vs last period</span>
-        </div>
-      </div>
-
-      <div class="summary-card expenses">
-        <div class="card-icon">💸</div>
-        <div class="card-content">
-          <span class="card-label">Total Expenses</span>
-          <span class="card-value">$60,000</span>
-          <span class="card-change negative">+5.2% vs last period</span>
-        </div>
-      </div>
-
-      <div class="summary-card profit">
-        <div class="card-icon">📈</div>
-        <div class="card-content">
-          <span class="card-label">Net Profit</span>
-          <span class="card-value">$65,000</span>
-          <span class="card-change positive">+18.2% vs last period</span>
-        </div>
-      </div>
-
-      <div class="summary-card margin">
-        <div class="card-icon">📊</div>
-        <div class="card-content">
-          <span class="card-label">Profit Margin</span>
-          <span class="card-value">52%</span>
-          <span class="card-change positive">+3.1% vs last period</span>
-        </div>
+        <p>Generated on {{ getCurrentDate() }}</p>
       </div>
     </div>
   </div>
