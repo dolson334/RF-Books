@@ -33,7 +33,7 @@ public class ReconciliationController {
     public ResponseEntity<List<ReconciliationMatch>> getLatestRunDetails() {
         try {
             return reconciliationService.getLatestRun()
-                    .map(run -> {
+                    .<ResponseEntity<List<ReconciliationMatch>>>map(run -> {
                         try {
                             List<ReconciliationMatch> matches = objectMapper.readValue(
                                     run.getResultsJson(),
@@ -41,7 +41,7 @@ public class ReconciliationController {
                             );
                             return ResponseEntity.ok(matches);
                         } catch (Exception e) {
-                            return ResponseEntity.<List<ReconciliationMatch>>internalServerError().build();
+                            return ResponseEntity.status(500).build();
                         }
                     })
                     .orElse(ResponseEntity.notFound().build());

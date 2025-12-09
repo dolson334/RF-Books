@@ -77,119 +77,62 @@
       <div class="card-label">Total Payments</div>
     </div>
   </section>
-      </div>
-    </div>
-
-    <div class="summary-row" *ngIf="matches().length">
-      <div class="chip">
-        Matched: <strong>{{ matchedCount() }}</strong>
-      </div>
-      <div class="chip">
-        Multiple matches: <strong>{{ multipleMatchCount() }}</strong>
-      </div>
-      <div class="chip warn">
-        Needs review: <strong>{{ unmatchedCount() }}</strong>
-      </div>
-    </div>
-  </section>
 
   <div *ngIf="isLoading()" class="loading-overlay">
     <div class="loader"></div>
   </div>
 
-  <main class="grid">
+  <!-- Matches Section - Only show if there are unmatched items -->
+  <main class="matches-section" *ngIf="unmatchedCount() > 0">
     <section class="card">
-      <h2>
-        <span class="source-badge rfbooks">RF Books</span>
-        Guest Payments
-      </h2>
-
-      <table *ngIf="payments().length; else noPayments">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Guest</th>
-            <th>Reservation</th>
-            <th>Amount</th>
-            <th>Method</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let p of payments()">
-            <td>{{ p.paymentDate | date: 'short' }}</td>
-            <td>{{ p.guestName || '—' }}</td>
-            <td>{{ p.reservationId || '—' }}</td>
-            <td>{{ p.amount | number: '1.2-2' }} {{ p.currency }}</td>
-            <td>{{ p.method || '—' }}</td>
-            <td>
-              <span [class.badge-success]="p.reconciled" [class.badge-warning]="!p.reconciled">
-                {{ p.reconciled ? 'Reconciled' : 'Pending' }}
-              </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <ng-template #noPayments>
-        <p class="empty">No payments in this window yet. Click "Load Payments".</p>
-      </ng-template>
-    </section>
-
-    <section class="card">
-      <h2>Reconciliation Results</h2>
+      <h2>Unmatched Transactions</h2>
 
       <table *ngIf="matches().length; else noMatches">
         <thead>
           <tr>
-            <th>Date</th>
             <th>Status</th>
-            <th>
-              <span class="source-badge rfbooks-inline">RF Books</span>
-              Payment
-            </th>
-            <th>
-              <span class="source-badge plaid-inline">Bank</span>
-              Transaction
-            </th>
-            <th>Diff</th>
+            <th>Payment Info</th>
+            <th>Bank Transaction</th>
+            <th>Amount</th>
             <th>Reason</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let m of matches()">
-            <td>{{ m.createdAt | date: 'short' }}</td>
             <td>
               <span class="badge" [ngClass]="badgeClass(m.status)">
                 {{ m.status }}
               </span>
             </td>
             <td>
-              <div *ngIf="m.payment; else noPayment" class="data-cell rfbooks-data">
-                {{ m.payment?.paymentDate | date: 'shortDate' }} ·
-                {{ m.payment?.amount | number: '1.2-2' }} {{ m.payment?.currency }}<br />
-                {{ m.payment?.guestName || '—' }} / {{ m.payment?.reservationId || '—' }}
+              <div *ngIf="m.payment; else noPayment" class="data-cell">
+                <div>{{ m.payment?.guestName || 'Unknown' }}</div>
+                <small>{{ m.payment?.reservationId || '—' }}</small>
               </div>
               <ng-template #noPayment>—</ng-template>
             </td>
             <td>
-              <div *ngIf="m.bankTransaction; else noBank" class="data-cell plaid-data">
-                {{ m.bankTransaction?.transactionDate | date: 'shortDate' }} ·
-                {{ m.bankTransaction?.amount | number: '1.2-2' }}
-                {{ m.bankTransaction?.currency }}<br />
+              <div *ngIf="m.bankTransaction; else noBank" class="data-cell">
                 {{ m.bankTransaction?.description || '—' }}
               </div>
               <ng-template #noBank>—</ng-template>
             </td>
             <td>{{ m.differenceAmount | number: '1.2-2' }}</td>
-            <td>{{ m.reason || '—' }}</td>
+            <td><small>{{ m.reason || '—' }}</small></td>
           </tr>
         </tbody>
       </table>
 
       <ng-template #noMatches>
-        <p class="empty">Run reconciliation to see results for this window.</p>
+        <p class="empty">No unmatched transactions found.</p>
       </ng-template>
     </section>
   </main>
+
+  <!-- Empty state when everything is matched -->
+  <div class="empty-state" *ngIf="!isLoading() && summary() && unmatchedCount() === 0">
+    <div class="empty-state-icon">✓</div>
+    <h3>All Transactions Reconciled</h3>
+    <p>Everything looks good! All payments are matched with bank transactions.</p>
+  </div>
 </div>

@@ -48,6 +48,71 @@
 }
 
 .subtitle {
+  font-size: 0.95rem;
+  color: #616e7c;
+  margin: 0;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.summary-card {
+  text-align: center;
+  padding: 1.5rem;
+  
+  .card-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  
+  .card-label {
+    font-size: 0.875rem;
+    color: #616e7c;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  
+  &.matched .card-value {
+    color: #059669;
+  }
+  
+  &.unmatched .card-value {
+    color: #dc2626;
+  }
+  
+  &.total .card-value {
+    color: #1e688b;
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  
+  .empty-state-icon {
+    font-size: 4rem;
+    color: #059669;
+    margin-bottom: 1rem;
+  }
+  
+  h3 {
+    font-size: 1.5rem;
+    color: var(--primary-dark);
+    margin-bottom: 0.5rem;
+  }
+  
+  p {
+    color: #616e7c;
+  }
+}
+
+.subtitle {
   margin: 0;
   color: #48566a;
   font-size: 0.95rem;

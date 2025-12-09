@@ -65,5 +65,3 @@ export interface ReconciliationSummary {
   errorMessage?: string;
   hasIssues: boolean;
 }
-  createdAt: string;
-}

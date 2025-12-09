@@ -158,56 +158,6 @@ export class ReconciliationComponent implements OnInit {
   goToSettings(): void {
     this.router.navigate(['/settings']);
   }
-  private toLocalInputValue(date: Date): string {
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const yyyy = date.getFullYear();
-    const mm = pad(date.getMonth() + 1);
-    const dd = pad(date.getDate());
-    const hh = pad(date.getHours());
-    const min = pad(date.getMinutes());
-    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
-  }
-
-  private toIsoString(local: string): string {
-    const d = new Date(local);
-    return d.toISOString();
-  }
-
-  loadPayments(): void {
-    this.isLoading.set(true);
-    this.reconService.getPayments().subscribe({
-      next: payments => {
-        this.payments.set(payments);
-        this.isLoading.set(false);
-      },
-      error: () => this.isLoading.set(false),
-    });
-  }
-
-  runReconciliation(): void {
-    if (!this.from() || !this.to()) return;
-
-    this.isLoading.set(true);
-    const fromIso = this.toIsoString(this.from());
-    const toIso = this.toIsoString(this.to());
-
-    this.reconService.runReconciliation(fromIso, toIso).subscribe({
-      next: matches => {
-        this.matches.set(matches);
-        this.isLoading.set(false);
-        this.connectionError.set(false);
-      },
-      error: err => {
-        this.isLoading.set(false);
-        // Check if error is due to missing token
-        if (err.status === 400 || err.status === 500) {
-          this.connectionError.set(true);
-          this.bankConnected.set(false);
-          localStorage.setItem('rfbooks_bank_connected', 'false');
-        }
-      },
-    });
-  }
 
   badgeClass(status: ReconciliationStatus): string {
     switch (status) {
