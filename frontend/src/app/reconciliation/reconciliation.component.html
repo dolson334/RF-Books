@@ -13,7 +13,26 @@
     </div>
   </header>
 
-  <div class="bank-banner" *ngIf="!bankConnected()">
+  <!-- Configuration Incomplete Warning -->
+  <div class="bank-banner warning" *ngIf="showConfigWarning()">
+    <div class="banner-content">
+      <span class="banner-icon">⚠️</span>
+      <div>
+        <strong>Setup Incomplete</strong>
+        <p>Your account setup is missing: {{ missingItems().join(', ') }}. Complete setup to use all features.</p>
+      </div>
+    </div>
+    <div class="banner-actions">
+      <button type="button" class="btn secondary-sm" (click)="goToCompleteSetup()">
+        Complete Setup
+      </button>
+      <button type="button" class="btn-close" (click)="dismissConfigWarning()" title="Dismiss">
+        ✕
+      </button>
+    </div>
+  </div>
+
+  <div class="bank-banner" *ngIf="!bankConnected() && !showConfigWarning()">
   <span>Bank account not connected yet.</span>
   <button type="button" class="btn primary" (click)="goToOnboarding()">
     Connect Bank with Plaid

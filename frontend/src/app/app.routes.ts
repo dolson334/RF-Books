@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { ReconciliationComponent } from './reconciliation/reconciliation.component';
 import { BankOnboardingComponent } from './reconciliation/bank-onboarding.component';
 import { OnboardingComponent } from './onboarding/onboarding.component';
+import { onboardingGuard } from './guards/onboarding.guard';
 
 const getInitialRedirect = (): string => {
   const complete = localStorage.getItem('rfbooks_onboarding_complete');
@@ -16,7 +17,11 @@ export const routes: Routes = [
   },
   { path: 'onboarding', component: OnboardingComponent },
   { path: 'settings', component: OnboardingComponent }, // Edit mode
-  { path: 'recon', component: ReconciliationComponent },
+  { 
+    path: 'recon', 
+    component: ReconciliationComponent,
+    canActivate: [onboardingGuard]
+  },
   { path: 'recon/onboarding', component: BankOnboardingComponent },
   { path: '**', redirectTo: 'recon' },
 ];

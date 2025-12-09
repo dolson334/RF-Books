@@ -9,6 +9,7 @@ import {
 import { ReconciliationService } from './reconciliation.service';
 import { PlaidService } from './plaid.service';
 import { Router } from '@angular/router';
+import { OnboardingStatusService } from '../services/onboarding-status.service';
 
 @Component({
   selector: 'rf-reconciliation-center',
@@ -26,6 +27,10 @@ export class ReconciliationComponent implements OnInit {
   isLoading = signal<boolean>(false);
   payments = signal<Payment[]>([]);
   matches = signal<ReconciliationMatch[]>([]);
+
+  // Onboarding status
+  showConfigWarning = signal<boolean>(false);
+  missingItems = signal<string[]>([]);
 
   readonly unmatchedCount = computed(
     () =>
@@ -47,7 +52,8 @@ export class ReconciliationComponent implements OnInit {
   constructor(
     private reconService: ReconciliationService,
     private plaidService: PlaidService,
-    private router: Router
+    private router: Router,
+    private onboardingStatus: OnboardingStatusService
   ) {}
 
   ngOnInit(): void {
@@ -59,6 +65,29 @@ export class ReconciliationComponent implements OnInit {
 
     // Check backend connection status
     this.checkConnectionStatus();
+    
+    // Check onboarding status
+    this.checkOnboardingStatus();
+  }
+
+  checkOnboardingStatus(): void {
+    this.onboardingStatus.checkStatus();
+    
+    // Wait a moment for status to populate, then check
+    setTimeout(() => {
+      if (this.onboardingStatus.hasMissingRequiredConfig()) {
+        this.showConfigWarning.set(true);
+        this.missingItems.set(this.onboardingStatus.getMissingItems());
+      }
+    }, 500);
+  }
+
+  dismissConfigWarning(): void {
+    this.showConfigWarning.set(false);
+  }
+
+  goToCompleteSetup(): void {
+    this.router.navigate(['/settings']);
   }
 
   checkConnectionStatus(): void {

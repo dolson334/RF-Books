@@ -296,7 +296,7 @@ tbody tr:last-child {
 .bank-banner {
   margin-bottom: 1rem;
   padding: 0.75rem 1rem;
-  border-radius: 999px;
+  border-radius: 12px;
   background: #eff6ff;
   color: #1d4ed8;
   display: flex;
@@ -310,6 +310,81 @@ tbody tr:last-child {
   background: #fef2f2;
   color: #991b1b;
   border: 1px solid #fca5a5;
+}
+
+.bank-banner.warning {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.banner-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.banner-content > div {
+  flex: 1;
+}
+
+.banner-content strong {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.banner-content p {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.1);
+  color: currentColor;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.btn-close:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.btn.secondary-sm {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.8rem;
+  border-radius: 999px;
+  background: white;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.btn.secondary-sm:hover {
+  background: #fef3c7;
 }
 
 .source-badge {

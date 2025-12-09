@@ -1,10 +1,11 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { PlaidService } from '../reconciliation/plaid.service';
 import { OnboardingService } from './onboarding.service';
 import { ChartOfAccount, ProductService, AccountType } from './onboarding.models';
+import { OnboardingStatusService } from '../services/onboarding-status.service';
 
 declare const Plaid: any;
 
@@ -36,19 +37,36 @@ export class OnboardingComponent implements OnInit {
   constructor(
     private plaidService: PlaidService,
     private onboardingService: OnboardingService,
-    private router: Router
+    private onboardingStatus: OnboardingStatusService,
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
-    // Check if onboarding is already complete (edit mode)
+    // Check if we're in settings/edit mode
+    const isSettingsRoute = this.router.url.includes('/settings');
     const onboardingComplete = localStorage.getItem('rfbooks_onboarding_complete');
-    if (onboardingComplete === 'true') {
+    
+    if (isSettingsRoute || onboardingComplete === 'true') {
       this.isEditMode.set(true);
       this.loadExistingData();
     } else {
-      this.loadDefaultChartOfAccounts();
-      this.loadDefaultProductsServices();
+      // Check if there's incomplete config to resume
+      const missingConfig = this.onboardingStatus.getMissingConfigFromSession();
+      if (missingConfig) {
+        this.loadExistingData();
+        // Start at appropriate step based on what's missing
+        if (missingConfig.chartOfAccounts) {
+          this.currentStep.set(1);
+        } else if (missingConfig.productsServices) {
+          this.currentStep.set(2);
+        }
+      } else {
+        this.loadDefaultChartOfAccounts();
+        this.loadDefaultProductsServices();
+      }
     }
+    
     this.loadPlaidScriptIfNeeded();
   }
 
@@ -75,6 +93,16 @@ export class OnboardingComponent implements OnInit {
         }
       },
       error: () => this.loadDefaultProductsServices()
+    });
+    
+    // Check bank connection status
+    this.plaidService.getConnectionStatus().subscribe({
+      next: status => {
+        this.bankConnected.set(status.connected);
+      },
+      error: () => {
+        this.bankConnected.set(false);
+      }
     });
   }
 
@@ -237,6 +265,11 @@ export class OnboardingComponent implements OnInit {
     this.onboardingService.completeOnboarding().subscribe({
       next: () => {
         localStorage.setItem('rfbooks_onboarding_complete', 'true');
+        localStorage.removeItem('rfbooks_onboarding_incomplete');
+        
+        // Clear onboarding status warnings
+        this.onboardingStatus.clearStatus();
+        
         this.router.navigate(['/recon']);
       },
       error: () => {
