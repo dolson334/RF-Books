@@ -172,7 +172,11 @@ VALUES
   ('default-user', 'tx_003', 'acc_test', 245.75, (NOW() - INTERVAL '4 days')::date, 'Online Payment Receipt', 'Online Payment', false, NOW()),
   ('default-user', 'tx_004', 'acc_test', 156.00, (NOW() - INTERVAL '5 days')::date, 'ACH Transfer - Chen', 'Robert Chen', false, NOW()),
   ('default-user', 'tx_005', 'acc_test', 320.00, (NOW() - INTERVAL '6 days')::date, 'Card Payment - Wilson', 'Wilson Family', false, NOW()),
-  ('default-user', 'tx_006', 'acc_test', 99.50, (NOW() - INTERVAL '7 days')::date, 'Mystery Transaction', 'Unknown', false, NOW())
+  ('default-user', 'tx_006', 'acc_test', 99.50, (NOW() - INTERVAL '7 days')::date, 'Mystery Transaction', 'Unknown', false, NOW()),
+  ('default-user', 'tx_007', 'acc_test', 125.00, (NOW() - INTERVAL '8 days')::date, 'Bank Fee - Monthly Service', 'Bank of America', false, NOW()),
+  ('default-user', 'tx_008', 'acc_test', 450.00, (NOW() - INTERVAL '9 days')::date, 'Wire Transfer In', 'External Account', false, NOW()),
+  ('default-user', 'tx_009', 'acc_test', 67.80, (NOW() - INTERVAL '10 days')::date, 'ATM Withdrawal', 'Chase ATM', false, NOW()),
+  ('default-user', 'tx_010', 'acc_test', 299.99, (NOW() - INTERVAL '11 days')::date, 'Check Deposit #1234', 'Mobile Deposit', false, NOW())
 ON CONFLICT (transaction_id) DO NOTHING;
 
 \echo 'RF Books database initialized successfully with test data!'

@@ -141,6 +141,20 @@ public class ReconciliationService {
             matches.add(match);
         }
 
+        // Add unmatched bank transactions
+        for (BankTransactionSummary tx : bankTransactions) {
+            if (!matchedTransactionIds.contains(tx.getTransactionId())) {
+                ReconciliationMatch match = new ReconciliationMatch();
+                match.setId(tx.getId());
+                match.setStatus("UNMATCHED_BANK_TRANSACTION");
+                match.setBankTransaction(tx);
+                match.setDifferenceAmount(tx.getAmount());
+                match.setReason("No matching payment found");
+                match.setCreatedAt(Instant.now().toString());
+                matches.add(match);
+            }
+        }
+
         return matches;
     }
 

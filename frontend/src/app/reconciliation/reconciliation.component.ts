@@ -243,13 +243,12 @@ export class ReconciliationComponent implements OnInit {
     const payment = this.selectedPayment();
     const transaction = this.selectedTransaction();
     
-    if (!payment || !transaction) return;
+    if (!payment || !transaction || !transaction.transactionId) return;
 
     this.isMatching.set(true);
-    this.reconService.createManualMatch(payment.externalId, transaction.id.toString()).subscribe({
+    this.reconService.createManualMatch(payment.externalId, transaction.transactionId).subscribe({
       next: () => {
         this.clearSelection();
-        this.loadLatestReconciliation();
         this.runNow(); // Re-run reconciliation to see the match
       },
       error: (err) => {
