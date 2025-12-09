@@ -254,6 +254,58 @@
   padding-left: 3rem !important;
   color: #475569;
   font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.drill-icon {
+  display: inline-block;
+  width: 16px;
+  color: #3b82f6;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.drill-icon:hover {
+  color: #2563eb;
+  transform: scale(1.2);
+}
+
+.transaction-row {
+  background: #f1f5f9;
+  border-left: 3px solid #3b82f6;
+}
+
+.transaction-name {
+  padding-left: 5rem !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.txn-date {
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.txn-desc {
+  color: #334155;
+  font-weight: 500;
+}
+
+.txn-vendor {
+  color: #3b82f6;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.transaction-amount {
+  color: #475569 !important;
+  font-weight: 500 !important;
 }
 
 .amount {

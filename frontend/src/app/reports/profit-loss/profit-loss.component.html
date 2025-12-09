@@ -63,11 +63,33 @@
 
             <!-- Child Items (Show when expanded) -->
             <ng-container *ngIf="item.expanded && item.children">
-              <tr *ngFor="let child of item.children" class="child-row">
-                <td class="item-name child-name">{{ child.name }}</td>
-                <td class="amount">{{ formatCurrency(child.amount) }}</td>
-                <td class="percent">{{ formatPercent(child.percentage!) }}</td>
-              </tr>
+              <ng-container *ngFor="let child of item.children">
+                <tr class="child-row">
+                  <td class="item-name child-name">
+                    <span *ngIf="child.transactions && child.transactions.length > 0" 
+                          class="drill-icon" 
+                          (click)="toggleTransactions(child, $event)">
+                      {{ child.showTransactions ? '▼' : '▶' }}
+                    </span>
+                    {{ child.name }}
+                  </td>
+                  <td class="amount">{{ formatCurrency(child.amount) }}</td>
+                  <td class="percent">{{ formatPercent(child.percentage!) }}</td>
+                </tr>
+
+                <!-- Transaction Details (Show when showTransactions is true) -->
+                <ng-container *ngIf="child.showTransactions === true && child.transactions">
+                  <tr *ngFor="let txn of child.transactions" class="transaction-row">
+                    <td class="item-name transaction-name">
+                      <span class="txn-date">{{ txn.date }}</span>
+                      <span class="txn-desc">{{ txn.description }}</span>
+                      <span *ngIf="txn.vendor" class="txn-vendor">{{ txn.vendor }}</span>
+                    </td>
+                    <td class="amount transaction-amount">{{ formatCurrency(txn.amount) }}</td>
+                    <td class="percent"></td>
+                  </tr>
+                </ng-container>
+              </ng-container>
             </ng-container>
 
             <!-- Subtotal Row -->

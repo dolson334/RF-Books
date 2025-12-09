@@ -1,0 +1,177 @@
+<div class="income-container">
+  <div class="header">
+    <h1>Income</h1>
+    <button class="btn btn-primary" (click)="showAddForm()" *ngIf="!showForm()">
+      <span class="icon">+</span> New Income
+    </button>
+  </div>
+
+  <!-- Income Entry Form -->
+  <div class="income-form" *ngIf="showForm()">
+    <div class="form-header">
+      <h2>{{ editingId() ? 'Edit Income' : 'New Income' }}</h2>
+      <button class="btn-close" (click)="hideForm()">×</button>
+    </div>
+
+    <form [formGroup]="incomeForm" (ngSubmit)="saveIncome()">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="source">Source *</label>
+          <input
+            type="text"
+            id="source"
+            formControlName="source"
+            placeholder="Enter income source"
+          />
+          <span class="error" *ngIf="incomeForm.get('source')?.invalid && incomeForm.get('source')?.touched">
+            Source is required
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="incomeDate">Date *</label>
+          <input
+            type="date"
+            id="incomeDate"
+            formControlName="incomeDate"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="amount">Amount *</label>
+          <input
+            type="number"
+            id="amount"
+            formControlName="amount"
+            placeholder="0.00"
+            step="0.01"
+            min="0"
+          />
+          <span class="error" *ngIf="incomeForm.get('amount')?.invalid && incomeForm.get('amount')?.touched">
+            Amount must be greater than 0
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="category">Category *</label>
+          <select id="category" formControlName="category">
+            <option value="">Select a category</option>
+            <option *ngFor="let cat of categories" [value]="cat.value">
+              {{ cat.label }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="paymentMethod">Payment Method</label>
+          <select id="paymentMethod" formControlName="paymentMethod">
+            <option value="">Select payment method</option>
+            <option *ngFor="let pm of paymentMethods" [value]="pm.value">
+              {{ pm.label }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="referenceNumber">Reference #</label>
+          <input
+            type="text"
+            id="referenceNumber"
+            formControlName="referenceNumber"
+            placeholder="Receipt #, Invoice #, etc."
+          />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="description">Description</label>
+          <input
+            type="text"
+            id="description"
+            formControlName="description"
+            placeholder="Brief description"
+          />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="notes">Notes</label>
+          <textarea
+            id="notes"
+            formControlName="notes"
+            rows="3"
+            placeholder="Additional notes (optional)"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="hideForm()">
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="incomeForm.invalid || isSaving()"
+        >
+          {{ isSaving() ? 'Saving...' : (editingId() ? 'Update' : 'Save') }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Income List -->
+  <div class="income-list">
+    <div class="summary-card">
+      <h3>Total Income</h3>
+      <div class="total-amount">{{ getTotalIncome() | currency }}</div>
+    </div>
+
+    <div class="table-container" *ngIf="!isLoading()">
+      <table class="income-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Source</th>
+            <th>Category</th>
+            <th>Amount</th>
+            <th>Payment Method</th>
+            <th>Reference</th>
+            <th>Description</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let income of incomes()">
+            <td>{{ income.incomeDate | date: 'MM/dd/yyyy' }}</td>
+            <td class="source-name">{{ income.source }}</td>
+            <td>
+              <span class="category-badge">
+                {{ getCategoryLabel(income.category || '') }}
+              </span>
+            </td>
+            <td class="amount">{{ income.amount | currency }}</td>
+            <td>{{ getPaymentMethodLabel(income.paymentMethod || '') }}</td>
+            <td class="reference">{{ income.referenceNumber || '-' }}</td>
+            <td class="description">{{ income.description || '-' }}</td>
+            <td class="actions">
+              <button class="btn-icon" (click)="editIncome(income)" title="Edit">
+                ✏️
+              </button>
+              <button class="btn-icon" (click)="deleteIncome(income.id!)" title="Delete">
+                🗑️
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="incomes().length === 0">
+            <td colspan="8" class="no-data">
+              No income recorded yet. Click "New Income" to add one.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="loading" *ngIf="isLoading()">
+      Loading income...
+    </div>
+  </div>
+</div>
