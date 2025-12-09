@@ -87,8 +87,69 @@
 
   <!-- Matches Section - Only show if there are unmatched items -->
   <main class="matches-section" *ngIf="unmatchedCount() > 0">
+    <!-- Manual Matching Section -->
+    <section class="card manual-match-card">
+      <h2>Manual Matching</h2>
+      <p class="help-text">Select a payment and bank transaction to manually match them</p>
+      
+      <div class="match-grid">
+        <div class="match-column">
+          <h3>Unmatched Payments</h3>
+          <div class="match-list">
+            <div *ngFor="let payment of unmatchedPayments()" 
+                 class="match-item"
+                 [class.selected]="selectedPayment()?.id === payment.id"
+                 (click)="selectPayment(payment)">
+              <div class="match-item-header">
+                <strong>{{ payment.guestName || 'Unknown Guest' }}</strong>
+                <span class="amount">${{ payment.amount | number: '1.2-2' }}</span>
+              </div>
+              <div class="match-item-details">
+                <small>{{ payment.paymentDate | date: 'short' }}</small>
+                <small *ngIf="payment.reservationId">Res: {{ payment.reservationId }}</small>
+                <small *ngIf="payment.method">{{ payment.method }}</small>
+              </div>
+            </div>
+            <div *ngIf="unmatchedPayments().length === 0" class="empty-list">
+              No unmatched payments
+            </div>
+          </div>
+        </div>
+
+        <div class="match-column">
+          <h3>Unmatched Bank Transactions</h3>
+          <div class="match-list">
+            <div *ngFor="let tx of unmatchedBankTransactions()" 
+                 class="match-item"
+                 [class.selected]="selectedTransaction()?.id === tx.id"
+                 (click)="selectTransaction(tx)">
+              <div class="match-item-header">
+                <strong>{{ tx.description || 'Unknown' }}</strong>
+                <span class="amount">${{ tx.amount | number: '1.2-2' }}</span>
+              </div>
+              <div class="match-item-details">
+                <small>{{ tx.transactionDate | date: 'short' }}</small>
+              </div>
+            </div>
+            <div *ngIf="unmatchedBankTransactions().length === 0" class="empty-list">
+              No unmatched bank transactions
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="match-actions" *ngIf="selectedPayment() && selectedTransaction()">
+        <button type="button" class="btn-primary" (click)="createManualMatch()" [disabled]="isMatching()">
+          {{ isMatching() ? 'Matching...' : 'Match Selected Items' }}
+        </button>
+        <button type="button" class="btn-secondary" (click)="clearSelection()">
+          Clear Selection
+        </button>
+      </div>
+    </section>
+
     <section class="card">
-      <h2>Unmatched Transactions</h2>
+      <h2>All Transactions</h2>
 
       <table *ngIf="matches().length; else noMatches">
         <thead>

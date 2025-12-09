@@ -1,11 +1,13 @@
 package com.rfbooks.services;
 
 import com.rfbooks.dtos.ReconciliationSummary;
+import com.rfbooks.entities.ManualMatch;
 import com.rfbooks.entities.ReconciliationRun;
 import com.rfbooks.nonentities.BankTransactionSummary;
 import com.rfbooks.nonentities.Payment;
 import com.rfbooks.nonentities.ReconciliationMatch;
 import com.rfbooks.nonentities.PlaidTransaction;
+import com.rfbooks.repos.ManualMatchRepository;
 import com.rfbooks.repos.ReconciliationRunRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class ReconciliationService {
@@ -24,13 +28,16 @@ public class ReconciliationService {
     
     private final PlaidService plaidService;
     private final ReconciliationRunRepository runRepository;
+    private final ManualMatchRepository manualMatchRepository;
     private final ObjectMapper objectMapper;
 
     public ReconciliationService(PlaidService plaidService, 
                                   ReconciliationRunRepository runRepository,
+                                  ManualMatchRepository manualMatchRepository,
                                   ObjectMapper objectMapper) {
         this.plaidService = plaidService;
         this.runRepository = runRepository;
+        this.manualMatchRepository = manualMatchRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -75,6 +82,7 @@ public class ReconciliationService {
         for (PlaidTransaction pt : plaidTransactions) {
             BankTransactionSummary bts = new BankTransactionSummary();
             bts.setId(Long.valueOf(pt.getTransactionId().hashCode()));
+            bts.setTransactionId(pt.getTransactionId());
             bts.setAmount(pt.getAmount());
             bts.setCurrency("USD");
             bts.setTransactionDate(pt.getDate());
@@ -82,6 +90,11 @@ public class ReconciliationService {
             bts.setSource("plaid");
             bankTransactions.add(bts);
         }
+
+        // Load manual matches
+        List<ManualMatch> manualMatches = getManualMatches();
+        Map<String, String> manualMatchMap = manualMatches.stream()
+                .collect(Collectors.toMap(ManualMatch::getPaymentId, ManualMatch::getTransactionId));
 
         // Perform matching logic
         List<ReconciliationMatch> matches = new ArrayList<>();
@@ -92,13 +105,14 @@ public class ReconciliationService {
             match.setId(payment.getId());
             match.setPayment(payment);
 
-            BankTransactionSummary matchedTx = findMatchingTransaction(payment, bankTransactions);
+            BankTransactionSummary matchedTx = findMatchingTransaction(payment, bankTransactions, manualMatchMap);
 
             if (matchedTx != null) {
-                match.setStatus("MATCHED");
+                match.setStatus(manualMatchMap.containsKey(payment.getExternalId()) ? "MANUAL_MATCH" : "MATCHED");
                 match.setBankTransaction(matchedTx);
                 match.setDifferenceAmount(0.0);
-                match.setReason("Matched by date and amount");
+                match.setReason(manualMatchMap.containsKey(payment.getExternalId()) ? 
+                    "Manually matched by user" : "Matched by date and amount");
             } else {
                 match.setStatus("UNMATCHED_PAYMENT");
                 match.setDifferenceAmount(payment.getAmount());
@@ -178,8 +192,31 @@ public class ReconciliationService {
         return runRepository.findLatestByUserId(DEFAULT_USER_ID);
     }
 
+    public ManualMatch createManualMatch(String paymentId, String transactionId) {
+        ManualMatch match = new ManualMatch(DEFAULT_USER_ID, paymentId, transactionId);
+        return manualMatchRepository.save(match);
+    }
+
+    public void deleteManualMatch(String paymentId) {
+        manualMatchRepository.deleteByUserIdAndPaymentId(DEFAULT_USER_ID, paymentId);
+    }
+
+    public List<ManualMatch> getManualMatches() {
+        return manualMatchRepository.findByUserId(DEFAULT_USER_ID);
+    }
+
     private BankTransactionSummary findMatchingTransaction(Payment payment,
-                                                           List<BankTransactionSummary> transactions) {
+                                                           List<BankTransactionSummary> transactions,
+                                                           Map<String, String> manualMatches) {
+        // Check if there's a manual match first
+        if (manualMatches.containsKey(payment.getExternalId())) {
+            String matchedTxId = manualMatches.get(payment.getExternalId());
+            return transactions.stream()
+                    .filter(tx -> tx.getTransactionId().equals(matchedTxId))
+                    .findFirst()
+                    .orElse(null);
+        }
+        
         // Simple matching logic - you can make this more sophisticated
         for (BankTransactionSummary tx : transactions) {
             if (Math.abs(tx.getAmount() - payment.getAmount()) < 0.01) {

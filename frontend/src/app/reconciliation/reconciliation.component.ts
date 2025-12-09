@@ -6,6 +6,7 @@ import {
   ReconciliationMatch,
   ReconciliationSummary,
   ReconciliationStatus,
+  BankTransactionSummary,
 } from './reconciliation.models';
 import { ReconciliationService } from './reconciliation.service';
 import { PlaidService } from './plaid.service';
@@ -33,6 +34,11 @@ export class ReconciliationComponent implements OnInit {
   missingItems = signal<string[]>([]);
   showReconciliationIssues = signal<boolean>(false);
 
+  // Manual matching
+  selectedPayment = signal<Payment | null>(null);
+  selectedTransaction = signal<BankTransactionSummary | null>(null);
+  isMatching = signal<boolean>(false);
+
   readonly unmatchedCount = computed(() => {
     const s = this.summary();
     return s ? s.unmatchedPaymentCount + s.unmatchedBankCount : 0;
@@ -46,6 +52,18 @@ export class ReconciliationComponent implements OnInit {
   readonly hasIssues = computed(() => {
     const s = this.summary();
     return s ? s.hasIssues : false;
+  });
+
+  readonly unmatchedPayments = computed(() => {
+    return this.matches()
+      .filter(m => m.status === 'UNMATCHED_PAYMENT' && m.payment)
+      .map(m => m.payment!);
+  });
+
+  readonly unmatchedBankTransactions = computed(() => {
+    return this.matches()
+      .filter(m => m.status === 'UNMATCHED_BANK_TRANSACTION' && m.bankTransaction)
+      .map(m => m.bankTransaction!);
   });
 
   constructor(
@@ -195,6 +213,8 @@ export class ReconciliationComponent implements OnInit {
     switch (status) {
       case 'MATCHED':
         return 'badge matched';
+      case 'MANUAL_MATCH':
+        return 'badge manual-match';
       case 'MULTIPLE_MATCHES':
         return 'badge multi';
       case 'UNMATCHED_PAYMENT':
@@ -204,5 +224,38 @@ export class ReconciliationComponent implements OnInit {
       default:
         return 'badge';
     }
+  }
+
+  selectPayment(payment: Payment): void {
+    this.selectedPayment.set(payment);
+  }
+
+  selectTransaction(tx: BankTransactionSummary): void {
+    this.selectedTransaction.set(tx);
+  }
+
+  clearSelection(): void {
+    this.selectedPayment.set(null);
+    this.selectedTransaction.set(null);
+  }
+
+  createManualMatch(): void {
+    const payment = this.selectedPayment();
+    const transaction = this.selectedTransaction();
+    
+    if (!payment || !transaction) return;
+
+    this.isMatching.set(true);
+    this.reconService.createManualMatch(payment.externalId, transaction.id.toString()).subscribe({
+      next: () => {
+        this.clearSelection();
+        this.loadLatestReconciliation();
+        this.runNow(); // Re-run reconciliation to see the match
+      },
+      error: (err) => {
+        console.error('Failed to create manual match', err);
+        this.isMatching.set(false);
+      }
+    });
   }
 }

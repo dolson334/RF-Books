@@ -36,4 +36,19 @@ export class ReconciliationService {
       to
     });
   }
+
+  createManualMatch(paymentId: string, transactionId: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/match`, {
+      paymentId,
+      transactionId
+    });
+  }
+
+  deleteManualMatch(paymentId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/match/${paymentId}`);
+  }
+
+  getManualMatches(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/matches`);
+  }
 }

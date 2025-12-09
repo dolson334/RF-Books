@@ -105,6 +105,23 @@ CREATE INDEX idx_recon_user_id ON reconciliation_runs(user_id);
 CREATE INDEX idx_recon_run_at ON reconciliation_runs(run_at DESC);
 CREATE INDEX idx_recon_status ON reconciliation_runs(status);
 
+-- Manual Matches (user-confirmed payment-to-transaction matches)
+CREATE TABLE IF NOT EXISTS manual_matches (
+    id BIGSERIAL PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    payment_id VARCHAR(255) NOT NULL,
+    transaction_id VARCHAR(255) NOT NULL,
+    matched_at TIMESTAMP NOT NULL,
+    matched_by VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, payment_id),
+    UNIQUE(user_id, transaction_id)
+);
+
+CREATE INDEX idx_manual_match_user_id ON manual_matches(user_id);
+CREATE INDEX idx_manual_match_payment ON manual_matches(payment_id);
+CREATE INDEX idx_manual_match_transaction ON manual_matches(transaction_id);
+
 -- ============================================
 -- TRIGGERS FOR UPDATED_AT
 -- ============================================

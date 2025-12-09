@@ -1,6 +1,8 @@
 package com.rfbooks.controllers;
 
 import com.rfbooks.dtos.ReconciliationSummary;
+import com.rfbooks.entities.ManualMatch;
+import com.rfbooks.dtos.ManualMatchRequest;
 import com.rfbooks.nonentities.Payment;
 import com.rfbooks.nonentities.ReconciliationMatch;
 import com.rfbooks.nonentities.ReconciliationRequest;
@@ -84,4 +86,25 @@ public class ReconciliationController {
         );
         return ResponseEntity.ok(matches);
     }
+
+    @PostMapping("/match")
+    public ResponseEntity<ManualMatch> createManualMatch(@RequestBody ManualMatchRequest request) {
+        ManualMatch match = reconciliationService.createManualMatch(
+                request.getPaymentId(),
+                request.getTransactionId()
+        );
+        return ResponseEntity.ok(match);
+    }
+
+    @DeleteMapping("/match/{paymentId}")
+    public ResponseEntity<Void> deleteManualMatch(@PathVariable String paymentId) {
+        reconciliationService.deleteManualMatch(paymentId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/matches")
+    public ResponseEntity<List<ManualMatch>> getManualMatches() {
+        return ResponseEntity.ok(reconciliationService.getManualMatches());
+    }
 }
+

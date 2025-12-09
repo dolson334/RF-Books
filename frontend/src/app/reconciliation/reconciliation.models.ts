@@ -17,12 +17,14 @@ export interface Payment {
 
 export type ReconciliationStatus =
   | 'MATCHED'
+  | 'MANUAL_MATCH'
   | 'MULTIPLE_MATCHES'
   | 'UNMATCHED_PAYMENT'
   | 'UNMATCHED_BANK_TRANSACTION';
 
 export interface BankTransactionSummary {
   id: number;
+  transactionId?: string;
   amount: number;
   currency: CurrencyCode;
   transactionDate: string;

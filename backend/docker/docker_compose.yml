@@ -12,9 +12,7 @@ services:
       - "5433:5432"
     volumes:
       - rfbooks-data:/var/lib/postgresql/data
-      - ./:/docker-scripts/
-      - ./init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql
-      - ./03-apply-schema.sql:/docker-entrypoint-initdb.d/02-apply-schema.sql
+      - ./01-init-all.sql:/docker-entrypoint-initdb.d/01-init-all.sql
     networks:
       - rfbooks-network
 
