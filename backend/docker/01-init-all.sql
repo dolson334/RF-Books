@@ -248,78 +248,117 @@ CREATE INDEX idx_income_source ON income(source);
 --   ('default-user', 'pi_010', 275.25, 'USD', NOW() - INTERVAL '10 days', 'Card', '2468', 'Christopher Lee', 'RV-1260', false, 'rfbooks', NOW(), NOW())
 -- ON CONFLICT (external_id) DO NOTHING;
 
--- Insert test Plaid transactions
+-- Insert test Plaid transactions (negative = debits/expenses, positive = credits/income)
 INSERT INTO plaid_transactions (user_id, transaction_id, account_id, amount, date, name, merchant_name, pending, created_at)
 VALUES
-  ('default-user', 'tx_001', 'acc_test', 178.50, (NOW() - INTERVAL '1 day')::date, 'Visa Settlement · Sarah T.', 'Sarah Thompson', false, NOW()),
-  ('default-user', 'tx_002', 'acc_test', 642.00, (NOW() - INTERVAL '2 days')::date, 'ACH Deposit · Lewis Family', 'Lewis Family', false, NOW()),
-  ('default-user', 'tx_003', 'acc_test', 245.75, (NOW() - INTERVAL '4 days')::date, 'Online Payment Receipt', 'Online Payment', false, NOW()),
-  ('default-user', 'tx_004', 'acc_test', 156.00, (NOW() - INTERVAL '5 days')::date, 'ACH Transfer - Chen', 'Robert Chen', false, NOW()),
-  ('default-user', 'tx_005', 'acc_test', 320.00, (NOW() - INTERVAL '6 days')::date, 'Card Payment - Wilson', 'Wilson Family', false, NOW()),
-  ('default-user', 'tx_006', 'acc_test', 99.50, (NOW() - INTERVAL '7 days')::date, 'Mystery Transaction', 'Unknown', false, NOW()),
-  ('default-user', 'tx_007', 'acc_test', 125.00, (NOW() - INTERVAL '8 days')::date, 'Bank Fee - Monthly Service', 'Bank of America', false, NOW()),
-  ('default-user', 'tx_008', 'acc_test', 450.00, (NOW() - INTERVAL '9 days')::date, 'Wire Transfer In', 'External Account', false, NOW()),
-  ('default-user', 'tx_009', 'acc_test', 67.80, (NOW() - INTERVAL '10 days')::date, 'ATM Withdrawal', 'Chase ATM', false, NOW()),
-  ('default-user', 'tx_010', 'acc_test', 299.99, (NOW() - INTERVAL '11 days')::date, 'Check Deposit #1234', 'Mobile Deposit', false, NOW())
+  -- INCOME TRANSACTIONS (Credits - Positive amounts)
+  ('default-user', 'tx_income_001', 'acc_test', 1500.00, (CURRENT_DATE - 1)::date, 'Room Rental Payment - Smith', 'Smith Family', false, NOW()),
+  ('default-user', 'tx_income_002', 'acc_test', 3500.00, (CURRENT_DATE - 1)::date, 'Restaurant Daily Sales', 'Restaurant Sales', false, NOW()),
+  ('default-user', 'tx_income_003', 'acc_test', 450.00, (CURRENT_DATE - 1)::date, 'Gift Shop Sales', 'Gift Shop', false, NOW()),
+  ('default-user', 'tx_income_004', 'acc_test', 2000.00, (CURRENT_DATE - 2)::date, 'Suite Rental - Johnson', 'Johnson Family', false, NOW()),
+  ('default-user', 'tx_income_005', 'acc_test', 1800.00, (CURRENT_DATE - 2)::date, 'Bar Sales Deposit', 'Bar Sales', false, NOW()),
+  ('default-user', 'tx_income_006', 'acc_test', 800.00, (CURRENT_DATE - 2)::date, 'Hiking Tour Revenue', 'Tour Group', false, NOW()),
+  ('default-user', 'tx_income_007', 'acc_test', 1800.00, (CURRENT_DATE - 3)::date, 'ACH Deposit Williams', 'Williams Family', false, NOW()),
+  ('default-user', 'tx_income_008', 'acc_test', 5000.00, (CURRENT_DATE - 3)::date, 'Catering Event Payment', 'Corporate Event', false, NOW()),
+  ('default-user', 'tx_income_009', 'acc_test', 950.00, (CURRENT_DATE - 4)::date, 'Mountain Bike Tours', 'Bike Tours', false, NOW()),
+  ('default-user', 'tx_income_010', 'acc_test', 2500.00, (CURRENT_DATE - 5)::date, 'Premium Cabin - Brown', 'Brown Family', false, NOW()),
+  ('default-user', 'tx_income_011', 'acc_test', 2200.00, (CURRENT_DATE - 5)::date, 'Room Service Sales', 'Room Service', false, NOW()),
+  ('default-user', 'tx_income_012', 'acc_test', 2500.00, (CURRENT_DATE - 6)::date, 'Spa Services Daily', 'Spa Services', false, NOW()),
+  ('default-user', 'tx_income_013', 'acc_test', 3200.00, (CURRENT_DATE - 7)::date, 'Executive Suite - Davis', 'Davis Family', false, NOW()),
+  ('default-user', 'tx_income_014', 'acc_test', 1200.00, (CURRENT_DATE - 8)::date, 'Tent Site Revenue', 'Miller Family', false, NOW()),
+  -- Unmatched income transactions
+  ('default-user', 'tx_income_999', 'acc_test', 2750.00, (CURRENT_DATE - 4)::date, 'Unmatched Credit Transaction', 'Unknown Source', false, NOW()),
+  ('default-user', 'tx_income_998', 'acc_test', 890.00, (CURRENT_DATE - 6)::date, 'Mystery Deposit', 'Unknown', false, NOW()),
+  
+  -- EXPENSE TRANSACTIONS (Debits - Negative amounts)
+  ('default-user', 'tx_expense_001', 'acc_test', -1200.00, (CURRENT_DATE - 1)::date, 'SYSCO Food Service', 'Sysco', false, NOW()),
+  ('default-user', 'tx_expense_002', 'acc_test', -2000.00, (CURRENT_DATE - 1)::date, 'Wine Company ACH', 'Wine Co', false, NOW()),
+  ('default-user', 'tx_expense_003', 'acc_test', -15000.00, (CURRENT_DATE - 1)::date, 'Payroll ACH Transfer', 'Payroll', false, NOW()),
+  ('default-user', 'tx_expense_004', 'acc_test', -3000.00, (CURRENT_DATE - 1)::date, 'Health Insurance Premium', 'Health Insurance Co', false, NOW()),
+  ('default-user', 'tx_expense_005', 'acc_test', -2000.00, (CURRENT_DATE - 1)::date, 'Payroll Tax Payment', 'Tax Authority', false, NOW()),
+  ('default-user', 'tx_expense_006', 'acc_test', -2000.00, (CURRENT_DATE - 1)::date, 'Google Ads Payment', 'Google', false, NOW()),
+  ('default-user', 'tx_expense_007', 'acc_test', -2000.00, (CURRENT_DATE - 1)::date, 'Electric Bill ACH', 'Power Company', false, NOW()),
+  ('default-user', 'tx_expense_008', 'acc_test', -1200.00, (CURRENT_DATE - 1)::date, 'Water & Sewer Bill', 'Water Utility', false, NOW()),
+  ('default-user', 'tx_expense_009', 'acc_test', -800.00, (CURRENT_DATE - 1)::date, 'Gas Company Payment', 'Gas Company', false, NOW()),
+  ('default-user', 'tx_expense_010', 'acc_test', -2000.00, (CURRENT_DATE - 1)::date, 'Property Insurance', 'State Farm', false, NOW()),
+  ('default-user', 'tx_expense_011', 'acc_test', -1000.00, (CURRENT_DATE - 1)::date, 'Liability Insurance', 'Allstate', false, NOW()),
+  ('default-user', 'tx_expense_012', 'acc_test', -2500.00, (CURRENT_DATE - 2)::date, 'US Foods Delivery', 'US Foods', false, NOW()),
+  ('default-user', 'tx_expense_013', 'acc_test', -800.00, (CURRENT_DATE - 2)::date, 'Outdoor Equipment', 'Outdoor Supply', false, NOW()),
+  ('default-user', 'tx_expense_014', 'acc_test', -2500.00, (CURRENT_DATE - 2)::date, 'HVAC Repair Invoice', 'HVAC Pro', false, NOW()),
+  ('default-user', 'tx_expense_015', 'acc_test', -800.00, (CURRENT_DATE - 2)::date, 'Office Supplies', 'Office Depot', false, NOW()),
+  ('default-user', 'tx_expense_016', 'acc_test', -1500.00, (CURRENT_DATE - 3)::date, 'Beer Depot Purchase', 'Beer Depot', false, NOW()),
+  ('default-user', 'tx_expense_017', 'acc_test', -1500.00, (CURRENT_DATE - 3)::date, 'Facebook & Instagram Ads', 'Meta', false, NOW()),
+  ('default-user', 'tx_expense_018', 'acc_test', -500.00, (CURRENT_DATE - 3)::date, 'Bank Service Fees', 'Bank', false, NOW()),
+  ('default-user', 'tx_expense_019', 'acc_test', -600.00, (CURRENT_DATE - 4)::date, 'REI Hiking Gear', 'REI', false, NOW()),
+  ('default-user', 'tx_expense_020', 'acc_test', -1800.00, (CURRENT_DATE - 4)::date, 'Plumbing Repairs', 'Plumber Inc', false, NOW()),
+  ('default-user', 'tx_expense_021', 'acc_test', -800.00, (CURRENT_DATE - 5)::date, 'Check #1001 - Dairy', 'Local Farm', false, NOW()),
+  ('default-user', 'tx_expense_022', 'acc_test', -800.00, (CURRENT_DATE - 5)::date, 'Software Subscriptions', 'Software Vendors', false, NOW()),
+  ('default-user', 'tx_expense_023', 'acc_test', -600.00, (CURRENT_DATE - 5)::date, 'Staples Order', 'Staples', false, NOW()),
+  ('default-user', 'tx_expense_024', 'acc_test', -1500.00, (CURRENT_DATE - 6)::date, 'Liquor Warehouse ACH', 'Liquor Warehouse', false, NOW()),
+  ('default-user', 'tx_expense_025', 'acc_test', -1700.00, (CURRENT_DATE - 6)::date, 'Landscaping Service', 'Green Thumb', false, NOW()),
+  ('default-user', 'tx_expense_026', 'acc_test', -1850.00, (CURRENT_DATE - 7)::date, 'Restaurant Depot', 'Restaurant Depot', false, NOW()),
+  ('default-user', 'tx_expense_027', 'acc_test', -600.00, (CURRENT_DATE - 7)::date, 'Bike Shop Maintenance', 'Bike Shop', false, NOW()),
+  ('default-user', 'tx_expense_028', 'acc_test', -600.00, (CURRENT_DATE - 7)::date, 'Amazon Office Supplies', 'Amazon', false, NOW()),
+  ('default-user', 'tx_expense_029', 'acc_test', -700.00, (CURRENT_DATE - 7)::date, 'Miscellaneous Expenses', 'Various Vendors', false, NOW()),
+  ('default-user', 'tx_expense_030', 'acc_test', -1650.00, (CURRENT_DATE - 10)::date, 'Costco Business Purchase', 'Costco Business', false, NOW()),
+  -- Unmatched expense transactions
+  ('default-user', 'tx_expense_997', 'acc_test', -1450.00, (CURRENT_DATE - 3)::date, 'Unmatched Expense #1', 'Unknown Vendor', false, NOW()),
+  ('default-user', 'tx_expense_996', 'acc_test', -2200.00, (CURRENT_DATE - 5)::date, 'Unmatched Expense #2', 'Mystery Charge', false, NOW()),
+  ('default-user', 'tx_expense_995', 'acc_test', -875.00, (CURRENT_DATE - 8)::date, 'Unmatched Expense #3', 'Unknown Service', false, NOW())
 ON CONFLICT (transaction_id) DO NOTHING;
 
 -- Insert test expenses for P&L report
 INSERT INTO expenses (user_id, expense_date, amount, vendor_name, category, payment_method, account_id, reference_number, notes, created_at, updated_at)
 VALUES
-  -- Food Costs
+  -- Day 1 expenses (CURRENT_DATE - 1)
   ('default-user', CURRENT_DATE - 1, 1200.00, 'Sysco', 'Food Costs', 'ACH', NULL, 'INV-12345', 'Fresh Produce', NOW(), NOW()),
-  ('default-user', CURRENT_DATE - 2, 2500.00, 'US Foods', 'Food Costs', 'ACH', NULL, 'INV-12346', 'Meat & Seafood', NOW(), NOW()),
-  ('default-user', CURRENT_DATE - 5, 800.00, 'Local Farm', 'Food Costs', 'Check', NULL, 'CHK-1001', 'Dairy Products', NOW(), NOW()),
-  ('default-user', CURRENT_DATE - 7, 1850.00, 'Restaurant Depot', 'Food Costs', 'Card', NULL, NULL, 'Bulk Food Items', NOW(), NOW()),
-  ('default-user', CURRENT_DATE - 10, 1650.00, 'Costco Business', 'Food Costs', 'Card', NULL, NULL, 'Dry Goods', NOW(), NOW()),
-  
-  -- Beverage Costs
   ('default-user', CURRENT_DATE - 1, 2000.00, 'Wine Co', 'Beverage Costs', 'ACH', NULL, 'INV-W123', 'Wine Selection', NOW(), NOW()),
-  ('default-user', CURRENT_DATE - 3, 1500.00, 'Beer Depot', 'Beverage Costs', 'Card', NULL, NULL, 'Craft Beer', NOW(), NOW()),
-  ('default-user', CURRENT_DATE - 6, 1500.00, 'Liquor Warehouse', 'Beverage Costs', 'ACH', NULL, 'INV-L456', 'Spirits', NOW(), NOW()),
-  
-  -- Activity Supplies
-  ('default-user', CURRENT_DATE - 2, 800.00, 'Outdoor Supply', 'Activity Supplies', 'Card', NULL, NULL, 'Kayak Equipment', NOW(), NOW()),
-  ('default-user', CURRENT_DATE - 4, 600.00, 'REI', 'Activity Supplies', 'Card', NULL, NULL, 'Hiking Gear', NOW(), NOW()),
-  ('default-user', CURRENT_DATE - 7, 600.00, 'Bike Shop', 'Activity Supplies', 'Card', NULL, NULL, 'Bike Maintenance', NOW(), NOW()),
-  
-  -- Payroll & Benefits
   ('default-user', CURRENT_DATE - 1, 15000.00, 'Payroll', 'Payroll', 'ACH', NULL, 'PAY-001', 'Staff Salaries', NOW(), NOW()),
   ('default-user', CURRENT_DATE - 1, 3000.00, 'Health Insurance Co', 'Benefits', 'ACH', NULL, 'INV-H789', 'Employee Health Insurance', NOW(), NOW()),
   ('default-user', CURRENT_DATE - 1, 2000.00, 'Tax Authority', 'Payroll Taxes', 'ACH', NULL, 'TAX-001', 'Payroll Tax Payment', NOW(), NOW()),
-  
-  -- Marketing & Advertising
   ('default-user', CURRENT_DATE - 1, 2000.00, 'Google', 'Marketing', 'Card', NULL, NULL, 'Google Ads Campaign', NOW(), NOW()),
-  ('default-user', CURRENT_DATE - 3, 1500.00, 'Meta', 'Marketing', 'Card', NULL, NULL, 'Facebook & Instagram Ads', NOW(), NOW()),
-  ('default-user', CURRENT_DATE - 5, 1500.00, 'Local Magazine', 'Marketing', 'Check', NULL, 'CHK-1002', 'Print Advertising', NOW(), NOW()),
-  
-  -- Utilities
   ('default-user', CURRENT_DATE - 1, 2000.00, 'Power Company', 'Utilities', 'ACH', NULL, 'ELEC-123', 'Electric Bill', NOW(), NOW()),
   ('default-user', CURRENT_DATE - 1, 1200.00, 'Water Utility', 'Utilities', 'ACH', NULL, 'WATER-456', 'Water & Sewer', NOW(), NOW()),
   ('default-user', CURRENT_DATE - 1, 800.00, 'Gas Company', 'Utilities', 'ACH', NULL, 'GAS-789', 'Natural Gas', NOW(), NOW()),
-  
-  -- Maintenance & Repairs
-  ('default-user', CURRENT_DATE - 2, 2500.00, 'HVAC Pro', 'Maintenance', 'Card', NULL, NULL, 'HVAC Repair', NOW(), NOW()),
-  ('default-user', CURRENT_DATE - 4, 1800.00, 'Plumber Inc', 'Maintenance', 'Card', NULL, NULL, 'Plumbing Service', NOW(), NOW()),
-  ('default-user', CURRENT_DATE - 6, 1700.00, 'Green Thumb', 'Maintenance', 'Card', NULL, NULL, 'Landscaping', NOW(), NOW()),
-  
-  -- Insurance
   ('default-user', CURRENT_DATE - 1, 2000.00, 'State Farm', 'Insurance', 'ACH', NULL, 'POL-12345', 'Property Insurance', NOW(), NOW()),
   ('default-user', CURRENT_DATE - 1, 1000.00, 'Allstate', 'Insurance', 'ACH', NULL, 'POL-67890', 'Liability Insurance', NOW(), NOW()),
-  
-  -- Office Supplies
-  ('default-user', CURRENT_DATE - 2, 800.00, 'Office Depot', 'Office Supplies', 'Card', NULL, NULL, 'Office Supply Order', NOW(), NOW()),
-  ('default-user', CURRENT_DATE - 5, 600.00, 'Staples', 'Office Supplies', 'Card', NULL, NULL, 'Printer Supplies', NOW(), NOW()),
-  ('default-user', CURRENT_DATE - 7, 600.00, 'Amazon', 'Office Supplies', 'Card', NULL, NULL, 'Paper Products', NOW(), NOW()),
-  
-  -- Professional Services
   ('default-user', CURRENT_DATE - 1, 1500.00, 'CPA Firm', 'Professional Services', 'Check', NULL, 'CHK-1003', 'Accounting Services', NOW(), NOW()),
   ('default-user', CURRENT_DATE - 1, 1500.00, 'Law Office', 'Professional Services', 'Check', NULL, 'CHK-1004', 'Legal Consultation', NOW(), NOW()),
   
-  -- Other Expenses
+  -- Day 2 expenses (CURRENT_DATE - 2)
+  ('default-user', CURRENT_DATE - 2, 2500.00, 'US Foods', 'Food Costs', 'ACH', NULL, 'INV-12346', 'Meat & Seafood', NOW(), NOW()),
+  ('default-user', CURRENT_DATE - 2, 800.00, 'Outdoor Supply', 'Activity Supplies', 'Card', NULL, NULL, 'Kayak Equipment', NOW(), NOW()),
+  ('default-user', CURRENT_DATE - 2, 2500.00, 'HVAC Pro', 'Maintenance', 'Card', NULL, NULL, 'HVAC Repair', NOW(), NOW()),
+  ('default-user', CURRENT_DATE - 2, 800.00, 'Office Depot', 'Office Supplies', 'Card', NULL, NULL, 'Office Supply Order', NOW(), NOW()),
+  
+  -- Day 3 expenses (CURRENT_DATE - 3)
+  ('default-user', CURRENT_DATE - 3, 1500.00, 'Beer Depot', 'Beverage Costs', 'Card', NULL, NULL, 'Craft Beer', NOW(), NOW()),
+  ('default-user', CURRENT_DATE - 3, 1500.00, 'Meta', 'Marketing', 'Card', NULL, NULL, 'Facebook & Instagram Ads', NOW(), NOW()),
   ('default-user', CURRENT_DATE - 3, 500.00, 'Bank', 'Bank Fees', 'ACH', NULL, NULL, 'Monthly Bank Fees', NOW(), NOW()),
+  ('default-user', CURRENT_DATE - 3, 325.00, 'Local Magazine', 'Marketing', 'Check', NULL, 'CHK-1002', 'Print Advertising', NOW(), NOW()),
+  
+  -- Day 4 expenses (CURRENT_DATE - 4)
+  ('default-user', CURRENT_DATE - 4, 600.00, 'REI', 'Activity Supplies', 'Card', NULL, NULL, 'Hiking Gear', NOW(), NOW()),
+  ('default-user', CURRENT_DATE - 4, 1800.00, 'Plumber Inc', 'Maintenance', 'Card', NULL, NULL, 'Plumbing Service', NOW(), NOW()),
+  
+  -- Day 5 expenses (CURRENT_DATE - 5)
+  ('default-user', CURRENT_DATE - 5, 800.00, 'Local Farm', 'Food Costs', 'Check', NULL, 'CHK-1001', 'Dairy Products', NOW(), NOW()),
   ('default-user', CURRENT_DATE - 5, 800.00, 'Software Vendors', 'Software', 'Card', NULL, NULL, 'Software Subscriptions', NOW(), NOW()),
-  ('default-user', CURRENT_DATE - 7, 700.00, 'Various Vendors', 'Miscellaneous', 'Card', NULL, NULL, 'Misc Expenses', NOW(), NOW());
+  ('default-user', CURRENT_DATE - 5, 600.00, 'Staples', 'Office Supplies', 'Card', NULL, NULL, 'Printer Supplies', NOW(), NOW()),
+  ('default-user', CURRENT_DATE - 5, 1500.00, 'Local Magazine', 'Marketing', 'Check', NULL, 'CHK-1005', 'Annual Print Ad', NOW(), NOW()),
+  
+  -- Day 6 expenses (CURRENT_DATE - 6)
+  ('default-user', CURRENT_DATE - 6, 1500.00, 'Liquor Warehouse', 'Beverage Costs', 'ACH', NULL, 'INV-L456', 'Spirits', NOW(), NOW()),
+  ('default-user', CURRENT_DATE - 6, 1700.00, 'Green Thumb', 'Maintenance', 'Card', NULL, NULL, 'Landscaping', NOW(), NOW()),
+  
+  -- Day 7 expenses (CURRENT_DATE - 7)
+  ('default-user', CURRENT_DATE - 7, 1850.00, 'Restaurant Depot', 'Food Costs', 'Card', NULL, NULL, 'Bulk Food Items', NOW(), NOW()),
+  ('default-user', CURRENT_DATE - 7, 600.00, 'Bike Shop', 'Activity Supplies', 'Card', NULL, NULL, 'Bike Maintenance', NOW(), NOW()),
+  ('default-user', CURRENT_DATE - 7, 600.00, 'Amazon', 'Office Supplies', 'Card', NULL, NULL, 'Paper Products', NOW(), NOW()),
+  ('default-user', CURRENT_DATE - 7, 700.00, 'Various Vendors', 'Miscellaneous', 'Card', NULL, NULL, 'Misc Expenses', NOW(), NOW()),
+  
+  -- Day 10 expenses (CURRENT_DATE - 10)
+  ('default-user', CURRENT_DATE - 10, 1650.00, 'Costco Business', 'Food Costs', 'Card', NULL, NULL, 'Dry Goods', NOW(), NOW());
 
 -- Add more payment data (deprecated - use income table)
 -- INSERT INTO payments (user_id, external_id, amount, currency, payment_date, method, last4, guest_name, reservation_id, reconciled, source, created_at, updated_at)

@@ -139,10 +139,12 @@
       </div>
     }
     <div class="reconciliation-grid">
-      <!-- Unreconciled Expenses -->
+      <!-- Unreconciled/Reconciled Expenses -->
       <div class="section">
-        <h3>Unreconciled Expenses</h3>
-        @if (unreconciledExpenses().length === 0) {
+        <h3>{{ showMatched() ? 'Reconciled' : 'Unreconciled' }} Expenses</h3>
+        @if (showMatched() && reconciledExpenses().length === 0) {
+          <p class="empty-state">No reconciled expenses yet!</p>
+        } @else if (!showMatched() && unreconciledExpenses().length === 0) {
           <p class="empty-state">All expenses have been reconciled!</p>
         } @else {
           <div class="table-container">
@@ -154,19 +156,31 @@
                   <th>Category</th>
                   <th>Amount</th>
                   <th>Reference</th>
+                  @if (showMatched()) {
+                    <th>Actions</th>
+                  }
                 </tr>
               </thead>
               <tbody>
-                @for (expense of unreconciledExpenses(); track expense.id) {
+                @for (expense of showMatched() ? reconciledExpenses() : unreconciledExpenses(); track expense.id) {
                   <tr 
-                    [class.selected]="selectedExpense()?.id === expense.id"
-                    (click)="selectExpense(expense)"
-                    class="clickable-row">
+                    [class.selected]="!showMatched() && selectedExpense()?.id === expense.id"
+                    (click)="!showMatched() && selectExpense(expense)"
+                    [class.clickable-row]="!showMatched()">
                     <td>{{ expense.expenseDate | date:'short' }}</td>
                     <td>{{ expense.vendorName }}</td>
                     <td>{{ expense.category }}</td>
                     <td class="amount negative">{{ expense.amount | currency }}</td>
                     <td>{{ expense.referenceNumber || '-' }}</td>
+                    @if (showMatched()) {
+                      <td>
+                        <button 
+                          class="btn-link" 
+                          (click)="unmatchExpense(expense.id)">
+                          Unmatch
+                        </button>
+                      </td>
+                    }
                   </tr>
                 }
               </tbody>
@@ -175,39 +189,41 @@
         }
       </div>
 
-      <!-- Bank Transactions (Debits) -->
-      <div class="section">
-        <h3>Bank Transactions (Debits)</h3>
-        @if (debitTransactions().length === 0) {
-          <p class="empty-state">No unmatched debit transactions</p>
-        } @else {
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Description</th>
-                  <th>Amount</th>
-                  <th>Balance</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (tx of debitTransactions(); track tx.transactionId) {
-                  <tr 
-                    [class.selected]="selectedExpenseTransaction()?.transactionId === tx.transactionId"
-                    (click)="selectExpenseTransaction(tx)"
-                    class="clickable-row">
-                    <td>{{ tx.transactionDate | date:'short' }}</td>
-                    <td>{{ tx.description }}</td>
-                    <td class="amount negative">{{ tx.amount | currency }}</td>
-                    <td class="amount">{{ tx.runningBalance | currency }}</td>
+      <!-- Bank Transactions (Debits) - Only show in unmatched view -->
+      @if (!showMatched()) {
+        <div class="section">
+          <h3>Bank Transactions (Debits)</h3>
+          @if (debitTransactions().length === 0) {
+            <p class="empty-state">No unmatched debit transactions</p>
+          } @else {
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Balance</th>
                   </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        }
-      </div>
+                </thead>
+                <tbody>
+                  @for (tx of debitTransactions(); track tx.transactionId) {
+                    <tr 
+                      [class.selected]="selectedExpenseTransaction()?.transactionId === tx.transactionId"
+                      (click)="selectExpenseTransaction(tx)"
+                      class="clickable-row">
+                      <td>{{ tx.transactionDate | date:'short' }}</td>
+                      <td>{{ tx.description }}</td>
+                      <td class="amount negative">{{ tx.amount | currency }}</td>
+                      <td class="amount">{{ tx.runningBalance | currency }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      }
     </div>
   </div>
 
@@ -299,39 +315,41 @@
         }
       </div>
 
-      <!-- Bank Transactions (Credits) -->
-      <div class="section">
-        <h3>Bank Transactions (Credits)</h3>
-        @if (creditTransactions().length === 0) {
-          <p class="empty-state">No unmatched credit transactions</p>
-        } @else {
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Description</th>
-                  <th>Amount</th>
-                  <th>Balance</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (tx of creditTransactions(); track tx.transactionId) {
-                  <tr 
-                    [class.selected]="selectedIncomeTransaction()?.transactionId === tx.transactionId"
-                    (click)="selectIncomeTransaction(tx)"
-                    class="clickable-row">
-                    <td>{{ tx.transactionDate | date:'short' }}</td>
-                    <td>{{ tx.description }}</td>
-                    <td class="amount positive">{{ tx.amount | currency }}</td>
-                    <td class="amount">{{ tx.runningBalance | currency }}</td>
+      <!-- Bank Transactions (Credits) - Only show in unmatched view -->
+      @if (!showMatched()) {
+        <div class="section">
+          <h3>Bank Transactions (Credits)</h3>
+          @if (creditTransactions().length === 0) {
+            <p class="empty-state">No unmatched credit transactions</p>
+          } @else {
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Balance</th>
                   </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        }
-      </div>
+                </thead>
+                <tbody>
+                  @for (tx of creditTransactions(); track tx.transactionId) {
+                    <tr 
+                      [class.selected]="selectedIncomeTransaction()?.transactionId === tx.transactionId"
+                      (click)="selectIncomeTransaction(tx)"
+                      class="clickable-row">
+                      <td>{{ tx.transactionDate | date:'short' }}</td>
+                      <td>{{ tx.description }}</td>
+                      <td class="amount positive">{{ tx.amount | currency }}</td>
+                      <td class="amount">{{ tx.runningBalance | currency }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      }
     </div>
   </div>
 </div>
