@@ -1,7 +1,7 @@
 // ProductService.java
 package com.rfbooks.backend.entities;
 
-import com.rfbooks.backend.nonentities.products.ItemType;
+import com.rfbooks.backend.enums.ItemType;
 import jakarta.persistence.*;
 import java.time.Instant;
 

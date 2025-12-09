@@ -1,9 +1,9 @@
 package com.rfbooks.backend.controllers;
 
-import com.rfbooks.backend.nonentities.plaid.ExchangePublicTokenRequest;
-import com.rfbooks.backend.nonentities.plaid.LinkTokenResponse;
-import com.rfbooks.backend.nonentities.plaid.PlaidTransaction;
-import com.rfbooks.backend.nonentities.plaid.TransactionsRequest;
+import com.rfbooks.backend.nonentities.ExchangePublicTokenRequest;
+import com.rfbooks.backend.nonentities.LinkTokenResponse;
+import com.rfbooks.backend.nonentities.PlaidTransaction;
+import com.rfbooks.backend.nonentities.TransactionsRequest;
 import com.rfbooks.backend.services.PlaidService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -1,8 +1,9 @@
 // ProductServiceDTO.java
-package com.rfbooks.backend.nonentities.products;
+package com.rfbooks.backend.dtos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.rfbooks.backend.entities.ProductService;
+import com.rfbooks.backend.enums.ItemType;
 
 public class ProductServiceDTO {
 

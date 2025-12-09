@@ -1,7 +1,7 @@
 // ProductServiceRepository.java
 package com.rfbooks.backend.repos;
 
-import com.rfbooks.backend.nonentities.products.ItemType;
+import com.rfbooks.backend.enums.ItemType;
 import com.rfbooks.backend.entities.ProductService;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

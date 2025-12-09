@@ -1,4 +1,4 @@
-package com.rfbooks.backend.nonentities.payments;
+package com.rfbooks.backend.nonentities;
 
 public class Payment {
     private Long id;

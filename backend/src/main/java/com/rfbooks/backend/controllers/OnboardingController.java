@@ -1,8 +1,8 @@
 // OnboardingController.java
 package com.rfbooks.backend.controllers;
 
-import com.rfbooks.backend.nonentities.accounts.ChartOfAccountDTO;
-import com.rfbooks.backend.nonentities.products.ProductServiceDTO;
+import com.rfbooks.backend.dtos.ChartOfAccountDTO;
+import com.rfbooks.backend.dtos.ProductServiceDTO;
 import com.rfbooks.backend.services.ChartOfAccountService;
 import com.rfbooks.backend.services.ProductServiceService;
 import org.springframework.http.ResponseEntity;

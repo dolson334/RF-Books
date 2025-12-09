@@ -1,8 +1,9 @@
 // ChartOfAccountDTO.java
-package com.rfbooks.backend.nonentities.accounts;
+package com.rfbooks.backend.dtos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.rfbooks.backend.entities.ChartOfAccount;
+import com.rfbooks.backend.enums.AccountType;
 
 public class ChartOfAccountDTO {
 

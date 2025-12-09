@@ -1,4 +1,4 @@
-package com.rfbooks.backend.nonentities.plaid;
+package com.rfbooks.backend.nonentities;
 
 public class BankTransactionSummary {
     private Long id;

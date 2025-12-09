@@ -1,8 +1,8 @@
 package com.rfbooks.backend.controllers;
 
-import com.rfbooks.backend.nonentities.payments.Payment;
-import com.rfbooks.backend.nonentities.reconciliation.ReconciliationMatch;
-import com.rfbooks.backend.nonentities.reconciliation.ReconciliationRequest;
+import com.rfbooks.backend.nonentities.Payment;
+import com.rfbooks.backend.nonentities.ReconciliationMatch;
+import com.rfbooks.backend.nonentities.ReconciliationRequest;
 import com.rfbooks.backend.services.ReconciliationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

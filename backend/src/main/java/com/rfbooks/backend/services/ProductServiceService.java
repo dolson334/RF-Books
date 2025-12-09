@@ -2,8 +2,8 @@
 package com.rfbooks.backend.services;
 
 import com.rfbooks.backend.entities.ProductService;
-import com.rfbooks.backend.nonentities.products.ItemType;
-import com.rfbooks.backend.nonentities.products.ProductServiceDTO;
+import com.rfbooks.backend.enums.ItemType;
+import com.rfbooks.backend.dtos.ProductServiceDTO;
 import com.rfbooks.backend.repos.ProductServiceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

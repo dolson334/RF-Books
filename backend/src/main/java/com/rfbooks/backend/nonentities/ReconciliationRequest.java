@@ -1,4 +1,4 @@
-package com.rfbooks.backend.nonentities.reconciliation;
+package com.rfbooks.backend.nonentities;
 
 public class ReconciliationRequest {
     private String from;

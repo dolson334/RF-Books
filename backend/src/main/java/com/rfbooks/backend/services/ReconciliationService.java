@@ -1,9 +1,9 @@
 package com.rfbooks.backend.services;
 
-import com.rfbooks.backend.nonentities.plaid.BankTransactionSummary;
-import com.rfbooks.backend.nonentities.payments.Payment;
-import com.rfbooks.backend.nonentities.reconciliation.ReconciliationMatch;
-import com.rfbooks.backend.nonentities.plaid.PlaidTransaction;
+import com.rfbooks.backend.nonentities.BankTransactionSummary;
+import com.rfbooks.backend.nonentities.Payment;
+import com.rfbooks.backend.nonentities.ReconciliationMatch;
+import com.rfbooks.backend.nonentities.PlaidTransaction;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;

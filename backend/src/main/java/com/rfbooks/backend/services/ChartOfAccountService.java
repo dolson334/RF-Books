@@ -1,7 +1,7 @@
 // ChartOfAccountService.java
 package com.rfbooks.backend.services;
 
-import com.rfbooks.backend.nonentities.accounts.ChartOfAccountDTO;
+import com.rfbooks.backend.dtos.ChartOfAccountDTO;
 import com.rfbooks.backend.entities.ChartOfAccount;
 import com.rfbooks.backend.repos.ChartOfAccountRepository;
 import org.springframework.stereotype.Service;

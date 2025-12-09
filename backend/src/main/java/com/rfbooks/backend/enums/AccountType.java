@@ -1,4 +1,4 @@
-package com.rfbooks.backend.nonentities.accounts;
+package com.rfbooks.backend.enums;
 
 public enum AccountType {
     ASSET,

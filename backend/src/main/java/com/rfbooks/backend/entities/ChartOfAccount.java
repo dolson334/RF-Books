@@ -1,7 +1,7 @@
 // ChartOfAccount.java
 package com.rfbooks.backend.entities;
 
-import com.rfbooks.backend.nonentities.accounts.AccountType;
+import com.rfbooks.backend.enums.AccountType;
 import jakarta.persistence.*;
 import java.time.Instant;
 
