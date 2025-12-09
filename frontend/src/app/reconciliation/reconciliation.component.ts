@@ -248,6 +248,7 @@ export class ReconciliationComponent implements OnInit {
     this.isMatching.set(true);
     this.reconService.createManualMatch(payment.externalId, transaction.transactionId).subscribe({
       next: () => {
+        this.isMatching.set(false);
         this.clearSelection();
         this.runNow(); // Re-run reconciliation to see the match
       },

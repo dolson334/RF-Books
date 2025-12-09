@@ -161,7 +161,11 @@ VALUES
   ('default-user', 'pi_003', 82.00, 'USD', NOW() - INTERVAL '3 days', 'Card', '1111', 'Daniel H.', 'TENT-331', false, 'rfbooks', NOW(), NOW()),
   ('default-user', 'pi_004', 245.75, 'USD', NOW() - INTERVAL '4 days', 'Card', '5678', 'Jessica Martinez', 'CAB-92', false, 'rfbooks', NOW(), NOW()),
   ('default-user', 'pi_005', 156.00, 'USD', NOW() - INTERVAL '5 days', 'ACH', NULL, 'Robert Chen', 'RV-1250', false, 'rfbooks', NOW(), NOW()),
-  ('default-user', 'pi_006', 320.00, 'USD', NOW() - INTERVAL '6 days', 'Card', '9012', 'Emily & James Wilson', 'TENT-335', false, 'rfbooks', NOW(), NOW())
+  ('default-user', 'pi_006', 320.00, 'USD', NOW() - INTERVAL '6 days', 'Card', '9012', 'Emily & James Wilson', 'TENT-335', false, 'rfbooks', NOW(), NOW()),
+  ('default-user', 'pi_007', 189.00, 'USD', NOW() - INTERVAL '7 days', 'Card', '3456', 'Michael Johnson', 'RV-1255', false, 'rfbooks', NOW(), NOW()),
+  ('default-user', 'pi_008', 95.50, 'USD', NOW() - INTERVAL '8 days', 'Card', '7890', 'Amanda Brooks', 'TENT-340', false, 'rfbooks', NOW(), NOW()),
+  ('default-user', 'pi_009', 412.00, 'USD', NOW() - INTERVAL '9 days', 'ACH', NULL, 'David & Lisa Parker', 'CAB-95', false, 'rfbooks', NOW(), NOW()),
+  ('default-user', 'pi_010', 275.25, 'USD', NOW() - INTERVAL '10 days', 'Card', '2468', 'Christopher Lee', 'RV-1260', false, 'rfbooks', NOW(), NOW())
 ON CONFLICT (external_id) DO NOTHING;
 
 -- Insert test Plaid transactions
