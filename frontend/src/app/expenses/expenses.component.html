@@ -1,0 +1,177 @@
+<div class="expenses-container">
+  <div class="header">
+    <h1>Expenses</h1>
+    <button class="btn btn-primary" (click)="showAddForm()" *ngIf="!showForm()">
+      <span class="icon">+</span> New Expense
+    </button>
+  </div>
+
+  <!-- Expense Entry Form -->
+  <div class="expense-form" *ngIf="showForm()">
+    <div class="form-header">
+      <h2>{{ editingId() ? 'Edit Expense' : 'New Expense' }}</h2>
+      <button class="btn-close" (click)="hideForm()">×</button>
+    </div>
+
+    <form [formGroup]="expenseForm" (ngSubmit)="saveExpense()">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="vendorName">Vendor Name *</label>
+          <input
+            type="text"
+            id="vendorName"
+            formControlName="vendorName"
+            placeholder="Enter vendor name"
+          />
+          <span class="error" *ngIf="expenseForm.get('vendorName')?.invalid && expenseForm.get('vendorName')?.touched">
+            Vendor name is required
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="expenseDate">Date *</label>
+          <input
+            type="date"
+            id="expenseDate"
+            formControlName="expenseDate"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="amount">Amount *</label>
+          <input
+            type="number"
+            id="amount"
+            formControlName="amount"
+            placeholder="0.00"
+            step="0.01"
+            min="0"
+          />
+          <span class="error" *ngIf="expenseForm.get('amount')?.invalid && expenseForm.get('amount')?.touched">
+            Amount must be greater than 0
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="category">Category *</label>
+          <select id="category" formControlName="category">
+            <option value="">Select a category</option>
+            <option *ngFor="let cat of categories" [value]="cat.value">
+              {{ cat.label }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="paymentMethod">Payment Method</label>
+          <select id="paymentMethod" formControlName="paymentMethod">
+            <option value="">Select payment method</option>
+            <option *ngFor="let pm of paymentMethods" [value]="pm.value">
+              {{ pm.label }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="referenceNumber">Reference #</label>
+          <input
+            type="text"
+            id="referenceNumber"
+            formControlName="referenceNumber"
+            placeholder="Check #, Invoice #, etc."
+          />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="description">Description</label>
+          <input
+            type="text"
+            id="description"
+            formControlName="description"
+            placeholder="Brief description"
+          />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="notes">Notes</label>
+          <textarea
+            id="notes"
+            formControlName="notes"
+            rows="3"
+            placeholder="Additional notes (optional)"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="hideForm()">
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="expenseForm.invalid || isSaving()"
+        >
+          {{ isSaving() ? 'Saving...' : (editingId() ? 'Update' : 'Save') }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Expenses List -->
+  <div class="expenses-list">
+    <div class="summary-card">
+      <h3>Total Expenses</h3>
+      <div class="total-amount">{{ getTotalExpenses() | currency }}</div>
+    </div>
+
+    <div class="table-container" *ngIf="!isLoading()">
+      <table class="expense-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Vendor</th>
+            <th>Category</th>
+            <th>Amount</th>
+            <th>Payment Method</th>
+            <th>Reference</th>
+            <th>Description</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let expense of expenses()">
+            <td>{{ expense.expenseDate | date: 'MM/dd/yyyy' }}</td>
+            <td class="vendor-name">{{ expense.vendorName }}</td>
+            <td>
+              <span class="category-badge">
+                {{ getCategoryLabel(expense.category || '') }}
+              </span>
+            </td>
+            <td class="amount">{{ expense.amount | currency }}</td>
+            <td>{{ getPaymentMethodLabel(expense.paymentMethod || '') }}</td>
+            <td class="reference">{{ expense.referenceNumber || '-' }}</td>
+            <td class="description">{{ expense.description || '-' }}</td>
+            <td class="actions">
+              <button class="btn-icon" (click)="editExpense(expense)" title="Edit">
+                ✏️
+              </button>
+              <button class="btn-icon" (click)="deleteExpense(expense.id!)" title="Delete">
+                🗑️
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="expenses().length === 0">
+            <td colspan="8" class="no-data">
+              No expenses recorded yet. Click "New Expense" to add one.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="loading" *ngIf="isLoading()">
+      Loading expenses...
+    </div>
+  </div>
+</div>

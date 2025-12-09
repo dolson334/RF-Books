@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { ReconciliationComponent } from './reconciliation/reconciliation.component';
 import { BankOnboardingComponent } from './reconciliation/bank-onboarding.component';
 import { OnboardingComponent } from './onboarding/onboarding.component';
+import { ExpensesComponent } from './expenses/expenses.component';
 import { onboardingGuard } from './guards/onboarding.guard';
 
 const getInitialRedirect = (): string => {
@@ -23,5 +24,10 @@ export const routes: Routes = [
     canActivate: [onboardingGuard]
   },
   { path: 'recon/onboarding', component: BankOnboardingComponent },
+  { 
+    path: 'expenses', 
+    component: ExpensesComponent,
+    canActivate: [onboardingGuard]
+  },
   { path: '**', redirectTo: 'recon' },
 ];

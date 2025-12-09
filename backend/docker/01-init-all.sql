@@ -149,6 +149,28 @@ CREATE INDEX idx_manual_match_user ON manual_matches(user_id);
 CREATE INDEX idx_manual_match_payment ON manual_matches(payment_id);
 CREATE INDEX idx_manual_match_transaction ON manual_matches(transaction_id);
 
+-- Expenses
+CREATE TABLE IF NOT EXISTS expenses (
+    id BIGSERIAL PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    expense_date DATE NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    currency VARCHAR(3) DEFAULT 'USD',
+    vendor_name VARCHAR(255),
+    category VARCHAR(100),
+    account_id BIGINT,
+    payment_method VARCHAR(50),
+    reference_number VARCHAR(100),
+    description TEXT,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_expense_user ON expenses(user_id);
+CREATE INDEX idx_expense_date ON expenses(expense_date);
+CREATE INDEX idx_expense_vendor ON expenses(vendor_name);
+
 -- ============================================
 -- INSERT TEST DATA
 -- ============================================
