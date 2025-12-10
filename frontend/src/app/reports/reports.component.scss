@@ -1,8 +1,20 @@
 .reports-container {
-  padding: 2rem;
+  padding: 2.5rem;
   max-width: 1600px;
   margin: 0 auto;
-  min-height: calc(100vh - 72px);
+  min-height: calc(100vh - 80px);
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .header {
@@ -13,14 +25,27 @@
 }
 
 .header h1 {
-  font-size: 2.75rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, #0f172a 0%, #3b82f6 50%, #8b5cf6 100%);
+  font-size: 3rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #0f172a 0%, #3b82f6 40%, #a78bfa 70%, #ec4899 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin: 0 0 0.5rem 0;
-  letter-spacing: -1px;
+  margin: 0 0 0.75rem 0;
+  letter-spacing: -1.5px;
+  text-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+  animation: slideInRight 0.6s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .subtitle {
@@ -101,22 +126,47 @@
 }
 
 .metric-card {
-  background: white;
-  border-radius: 20px;
-  padding: 2rem;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 24px;
+  padding: 2.25rem;
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  gap: 1.75rem;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15),
+              0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   position: relative;
   overflow: hidden;
-  transition: all 0.3s;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeIn 0.6s ease-out backwards;
+}
+
+.metric-card:nth-child(2) { animation-delay: 0.1s; }
+.metric-card:nth-child(3) { animation-delay: 0.2s; }
+.metric-card:nth-child(4) { animation-delay: 0.3s; }
+
+.metric-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
 }
 
 .metric-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.12);
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 16px 56px rgba(31, 38, 135, 0.25),
+              0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.metric-card:hover::after {
+  opacity: 1;
 }
 
 .metric-card::before {
