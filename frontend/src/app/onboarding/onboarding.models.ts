@@ -27,5 +27,16 @@ export interface OnboardingProgress {
   bankConnected: boolean;
   chartOfAccountsCreated: boolean;
   productsServicesCreated: boolean;
+  taxesConfigured: boolean;
   completed: boolean;
+}
+
+export interface TaxRate {
+  id?: number;
+  name: string;
+  rate: number;
+  type: 'SALES' | 'INCOME' | 'PROPERTY' | 'PAYROLL' | 'OTHER';
+  isCompound?: boolean;
+  isActive?: boolean;
+  description?: string;
 }

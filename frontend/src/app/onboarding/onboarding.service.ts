@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ChartOfAccount, ProductService, OnboardingProgress } from './onboarding.models';
+import { ChartOfAccount, ProductService, OnboardingProgress, TaxRate } from './onboarding.models';
 
 @Injectable({
   providedIn: 'root',
@@ -27,6 +27,15 @@ export class OnboardingService {
 
   getProductsServices(): Observable<ProductService[]> {
     return this.http.get<ProductService[]>(`${this.baseUrl}/products-services`);
+  }
+
+  // Tax Rates
+  saveTaxRates(taxRates: TaxRate[]): Observable<TaxRate[]> {
+    return this.http.post<TaxRate[]>('http://localhost:8081/api/tax-rates', taxRates);
+  }
+
+  getTaxRates(): Observable<TaxRate[]> {
+    return this.http.get<TaxRate[]>('http://localhost:8081/api/tax-rates');
   }
 
   // Progress

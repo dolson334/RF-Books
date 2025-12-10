@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS onboarding_progress (
     bank_connected BOOLEAN DEFAULT FALSE,
     chart_of_accounts_created BOOLEAN DEFAULT FALSE,
     products_services_created BOOLEAN DEFAULT FALSE,
+    taxes_configured BOOLEAN DEFAULT FALSE,
     completed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -58,6 +59,24 @@ CREATE TABLE IF NOT EXISTS products_services (
 
 CREATE INDEX idx_products_services_user_id ON products_services(user_id);
 CREATE INDEX idx_products_services_type ON products_services(type);
+
+-- Tax Rates
+CREATE TABLE IF NOT EXISTS tax_rates (
+    id BIGSERIAL PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    rate DECIMAL(5, 4) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    is_compound BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    description VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, name)
+);
+
+CREATE INDEX idx_tax_rates_user_id ON tax_rates(user_id);
+CREATE INDEX idx_tax_rates_type ON tax_rates(type);
 
 -- Plaid Connections
 CREATE TABLE IF NOT EXISTS plaid_connections (

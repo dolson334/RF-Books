@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { PlaidService } from '../reconciliation/plaid.service';
 import { OnboardingService } from './onboarding.service';
-import { ChartOfAccount, ProductService, AccountType } from './onboarding.models';
+import { ChartOfAccount, ProductService, AccountType, TaxRate } from './onboarding.models';
 import { OnboardingStatusService } from '../services/onboarding-status.service';
 
 declare const Plaid: any;
@@ -17,7 +17,7 @@ declare const Plaid: any;
   styleUrls: ['./onboarding.component.scss'],
 })
 export class OnboardingComponent implements OnInit {
-  currentStep = signal<1 | 2 | 3 | 4>(1);
+  currentStep = signal<1 | 2 | 3 | 4 | 5>(1);
   isLoading = signal<boolean>(false);
   error = signal<string | null>(null);
   isEditMode = signal<boolean>(false);
@@ -29,7 +29,11 @@ export class OnboardingComponent implements OnInit {
   // Step 2: Products & Services
   productsServices = signal<ProductService[]>([]);
 
-  // Step 3: Bank Connection (Optional)
+  // Step 3: Tax Rates
+  taxRates = signal<TaxRate[]>([]);
+  taxTypes: TaxRate['type'][] = ['SALES', 'INCOME', 'PROPERTY', 'PAYROLL', 'OTHER'];
+
+  // Step 4: Bank Connection (Optional)
   plaidReady = signal<boolean>(false);
   bankConnected = signal<boolean>(false);
   private linkToken: string | null = null;
@@ -55,15 +59,10 @@ export class OnboardingComponent implements OnInit {
       const missingConfig = this.onboardingStatus.getMissingConfigFromSession();
       if (missingConfig) {
         this.loadExistingData();
-        // Start at appropriate step based on what's missing
-        if (missingConfig.chartOfAccounts) {
-          this.currentStep.set(1);
-        } else if (missingConfig.productsServices) {
-          this.currentStep.set(2);
-        }
       } else {
         this.loadDefaultChartOfAccounts();
         this.loadDefaultProductsServices();
+        this.loadDefaultTaxRates();
       }
     }
     
@@ -82,7 +81,7 @@ export class OnboardingComponent implements OnInit {
       },
       error: () => this.loadDefaultChartOfAccounts()
     });
-
+    
     // Load existing products & services
     this.onboardingService.getProductsServices().subscribe({
       next: items => {
@@ -93,6 +92,18 @@ export class OnboardingComponent implements OnInit {
         }
       },
       error: () => this.loadDefaultProductsServices()
+    });
+    
+    // Load existing tax rates
+    this.onboardingService.getTaxRates().subscribe({
+      next: rates => {
+        if (rates.length > 0) {
+          this.taxRates.set(rates);
+        } else {
+          this.loadDefaultTaxRates();
+        }
+      },
+      error: () => this.loadDefaultTaxRates()
     });
     
     // Check bank connection status
@@ -221,14 +232,14 @@ export class OnboardingComponent implements OnInit {
   }
 
   addProductService(): void {
-    this.productsServices.update(items => [
-      ...items,
+    this.productsServices.update(products => [
+      ...products,
       { name: '', type: 'SERVICE', defaultPrice: 0, unitOfMeasure: '' }
     ]);
   }
 
   removeProductService(index: number): void {
-    this.productsServices.update(items => items.filter((_, i) => i !== index));
+    this.productsServices.update(products => products.filter((_, i) => i !== index));
   }
 
   saveProductsServices(): void {
@@ -246,19 +257,78 @@ export class OnboardingComponent implements OnInit {
     });
   }
 
-  // ========== STEP 3: BANK CONNECTION (OPTIONAL) ==========
+  // ========== STEP 3: TAX RATES ==========
+
+  private loadDefaultTaxRates(): void {
+    this.taxRates.set([
+      { name: 'Sales Tax', rate: 0.0, type: 'SALES', isCompound: false, isActive: true, description: 'State and local sales tax' },
+    ]);
+  }
+
+  addTaxRate(): void {
+    this.taxRates.update(rates => [
+      ...rates,
+      { name: '', rate: 0, type: 'SALES', isCompound: false, isActive: true, description: '' }
+    ]);
+  }
+
+  removeTaxRate(index: number): void {
+    this.taxRates.update(rates => rates.filter((_, i) => i !== index));
+  }
+
+  canRemoveTaxRate(tax: TaxRate): boolean {
+    if (tax.type !== 'SALES') return true;
+    const salesTaxCount = this.taxRates().filter(t => t.type === 'SALES').length;
+    return salesTaxCount > 1;
+  }
+
+  saveTaxRates(): void {
+    // Validate that sales tax is configured
+    const salesTax = this.taxRates().find(t => t.type === 'SALES');
+    if (!salesTax || !salesTax.name || salesTax.rate === 0) {
+      this.error.set('Sales tax is required. Please add at least one sales tax rate.');
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.onboardingService.saveTaxRates(this.taxRates()).subscribe({
+      next: () => {
+        this.isLoading.set(false);
+        this.error.set(null);
+        this.currentStep.set(4);
+      },
+      error: () => {
+        this.error.set('Failed to save tax rates.');
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  skipTaxSetup(): void {
+    // Still require at least sales tax with 0% rate
+    const hasSalesTax = this.taxRates().some(t => t.type === 'SALES');
+    if (!hasSalesTax) {
+      this.taxRates.update(rates => [
+        ...rates,
+        { name: 'Sales Tax', rate: 0.0, type: 'SALES', isCompound: false, isActive: true, description: 'No sales tax' }
+      ]);
+    }
+    this.saveTaxRates();
+  }
+
+  // ========== STEP 4: BANK CONNECTION (OPTIONAL) ==========
 
   skipBankConnection(): void {
-    this.currentStep.set(4);
+    this.currentStep.set(5);
   }
 
   connectBankAndFinish(): void {
     if (this.bankConnected()) {
-      this.currentStep.set(4);
+      this.currentStep.set(5);
     }
   }
 
-  // ========== STEP 4: COMPLETE ==========
+  // ========== STEP 5: COMPLETE ==========
 
   completeOnboarding(): void {
     this.isLoading.set(true);
@@ -280,7 +350,7 @@ export class OnboardingComponent implements OnInit {
   }
 
   // Navigation helpers
-  goToStep(step: 1 | 2 | 3 | 4): void {
+  goToStep(step: 1 | 2 | 3 | 4 | 5): void {
     this.currentStep.set(step);
     this.error.set(null);
   }

@@ -22,6 +22,9 @@ public class OnboardingProgress {
     @Column(name = "products_services_created", nullable = false)
     private Boolean productsServicesCreated = false;
     
+    @Column(name = "taxes_configured", nullable = false)
+    private Boolean taxesConfigured = false;
+    
     @Column(nullable = false)
     private Boolean completed = false;
 
@@ -66,6 +69,14 @@ public class OnboardingProgress {
 
     public void setProductsServicesCreated(Boolean productsServicesCreated) {
         this.productsServicesCreated = productsServicesCreated;
+    }
+
+    public Boolean getTaxesConfigured() {
+        return taxesConfigured;
+    }
+
+    public void setTaxesConfigured(Boolean taxesConfigured) {
+        this.taxesConfigured = taxesConfigured;
     }
 
     public Boolean getCompleted() {

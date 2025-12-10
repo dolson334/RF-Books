@@ -3,9 +3,9 @@ package com.rfbooks.services;
 import com.rfbooks.dtos.FinancialReportDto;
 import com.rfbooks.dtos.ProfitLossReportDto;
 import com.rfbooks.entities.Expense;
-import com.rfbooks.entities.PaymentEntity;
+import com.rfbooks.entities.Income;
 import com.rfbooks.repos.ExpenseRepository;
-import com.rfbooks.repos.PaymentRepository;
+import com.rfbooks.repos.IncomeRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -20,11 +20,11 @@ public class ReportService {
 
     private static final String DEFAULT_USER_ID = "default-user";
     private final ExpenseRepository expenseRepository;
-    private final PaymentRepository paymentRepository;
+    private final IncomeRepository incomeRepository;
 
-    public ReportService(ExpenseRepository expenseRepository, PaymentRepository paymentRepository) {
+    public ReportService(ExpenseRepository expenseRepository, IncomeRepository incomeRepository) {
         this.expenseRepository = expenseRepository;
-        this.paymentRepository = paymentRepository;
+        this.incomeRepository = incomeRepository;
     }
 
     public FinancialReportDto generateFinancialReport(String period, LocalDate startDate, LocalDate endDate) {
@@ -42,18 +42,16 @@ public class ReportService {
 
         // Fetch data
         List<Expense> expenses = expenseRepository.findByUserIdAndDateRange(DEFAULT_USER_ID, startDate, endDate);
-        Instant startInstant = startDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
-        Instant endInstant = endDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
-        List<PaymentEntity> payments = paymentRepository.findByUserIdAndDateRange(DEFAULT_USER_ID, startInstant, endInstant);
+        List<Income> income = incomeRepository.findByUserIdAndDateRange(DEFAULT_USER_ID, startDate, endDate);
 
         // Build report
         FinancialReportDto report = new FinancialReportDto();
         
         // Summary
         double totalExpenses = expenses.stream().mapToDouble(Expense::getAmount).sum();
-        double totalIncome = payments.stream().mapToDouble(PaymentEntity::getAmount).sum();
-        long reconciledCount = payments.stream().filter(p -> p.getReconciled() != null && p.getReconciled()).count();
-        double reconciliationRate = payments.isEmpty() ? 0 : (reconciledCount * 100.0 / payments.size());
+        double totalIncome = income.stream().mapToDouble(Income::getAmount).sum();
+        long reconciledCount = income.stream().filter(i -> i.getReconciled() != null && i.getReconciled()).count();
+        double reconciliationRate = income.isEmpty() ? 0 : (reconciledCount * 100.0 / income.size());
         
         report.setSummary(new FinancialReportDto.ReportSummary(
             totalIncome,
@@ -83,13 +81,28 @@ public class ReportService {
         
         report.setExpensesByCategory(categoryBreakdowns);
 
-        // Income by category (for now, just one category)
-        report.setIncomeByCategory(List.of(
-            new FinancialReportDto.CategoryBreakdown("Guest Payments", totalIncome, 100.0, payments.size())
-        ));
+        // Income by category
+        Map<String, List<Income>> incomeByCategory = income.stream()
+            .collect(Collectors.groupingBy(i -> i.getCategory() != null ? i.getCategory() : "Other Revenue"));
+        
+        List<FinancialReportDto.CategoryBreakdown> incomeBreakdowns = incomeByCategory.entrySet().stream()
+            .map(entry -> {
+                double amount = entry.getValue().stream().mapToDouble(Income::getAmount).sum();
+                double percentage = totalIncome > 0 ? (amount / totalIncome) * 100 : 0;
+                return new FinancialReportDto.CategoryBreakdown(
+                    entry.getKey(),
+                    amount,
+                    percentage,
+                    entry.getValue().size()
+                );
+            })
+            .sorted((a, b) -> Double.compare(b.getAmount(), a.getAmount()))
+            .collect(Collectors.toList());
+        
+        report.setIncomeByCategory(incomeBreakdowns);
 
         // Trends (weekly aggregation)
-        report.setTrends(generateTrends(expenses, payments, startDate, endDate));
+        report.setTrends(generateTrends(expenses, income, startDate, endDate));
 
         // Top vendors
         Map<String, List<Expense>> expensesByVendor = expenses.stream()
@@ -112,15 +125,15 @@ public class ReportService {
         report.setTopVendors(topVendors);
 
         // Monthly comparison
-        report.setMonthlyComparison(generateMonthlyComparison(expenses, payments, startDate, endDate));
+        report.setMonthlyComparison(generateMonthlyComparison(expenses, income, startDate, endDate));
 
         // Payment methods
-        Map<String, List<PaymentEntity>> paymentsByMethod = payments.stream()
-            .collect(Collectors.groupingBy(p -> p.getMethod() != null ? p.getMethod() : "Unknown"));
+        Map<String, List<Income>> incomeByMethod = income.stream()
+            .collect(Collectors.groupingBy(i -> i.getPaymentMethod() != null ? i.getPaymentMethod() : "Unknown"));
         
-        List<FinancialReportDto.PaymentMethodBreakdown> paymentMethods = paymentsByMethod.entrySet().stream()
+        List<FinancialReportDto.PaymentMethodBreakdown> paymentMethods = incomeByMethod.entrySet().stream()
             .map(entry -> {
-                double amount = entry.getValue().stream().mapToDouble(PaymentEntity::getAmount).sum();
+                double amount = entry.getValue().stream().mapToDouble(Income::getAmount).sum();
                 double percentage = totalIncome > 0 ? (amount / totalIncome) * 100 : 0;
                 return new FinancialReportDto.PaymentMethodBreakdown(
                     entry.getKey(),
@@ -137,7 +150,7 @@ public class ReportService {
         return report;
     }
 
-    private List<FinancialReportDto.TrendData> generateTrends(List<Expense> expenses, List<PaymentEntity> payments, LocalDate startDate, LocalDate endDate) {
+    private List<FinancialReportDto.TrendData> generateTrends(List<Expense> expenses, List<Income> income, LocalDate startDate, LocalDate endDate) {
         Map<String, Double> expensesByDate = new TreeMap<>();
         Map<String, Double> incomeByDate = new TreeMap<>();
         
@@ -149,11 +162,10 @@ public class ReportService {
             expensesByDate.merge(dateKey, expense.getAmount(), Double::sum);
         });
         
-        // Aggregate payments by date
-        payments.forEach(payment -> {
-            LocalDate date = payment.getPaymentDate().atZone(ZoneId.systemDefault()).toLocalDate();
-            String dateKey = date.format(formatter);
-            incomeByDate.merge(dateKey, payment.getAmount(), Double::sum);
+        // Aggregate income by date
+        income.forEach(inc -> {
+            String dateKey = inc.getIncomeDate().format(formatter);
+            incomeByDate.merge(dateKey, inc.getAmount(), Double::sum);
         });
         
         // Combine into trend data (limit to 10 points)
@@ -171,7 +183,7 @@ public class ReportService {
             .collect(Collectors.toList());
     }
 
-    private List<FinancialReportDto.MonthlyComparison> generateMonthlyComparison(List<Expense> expenses, List<PaymentEntity> payments, LocalDate startDate, LocalDate endDate) {
+    private List<FinancialReportDto.MonthlyComparison> generateMonthlyComparison(List<Expense> expenses, List<Income> income, LocalDate startDate, LocalDate endDate) {
         Map<String, Double> expensesByMonth = new TreeMap<>();
         Map<String, Double> incomeByMonth = new TreeMap<>();
         
@@ -183,11 +195,10 @@ public class ReportService {
             expensesByMonth.merge(monthKey, expense.getAmount(), Double::sum);
         });
         
-        // Aggregate payments by month
-        payments.forEach(payment -> {
-            LocalDate date = payment.getPaymentDate().atZone(ZoneId.systemDefault()).toLocalDate();
-            String monthKey = date.format(formatter);
-            incomeByMonth.merge(monthKey, payment.getAmount(), Double::sum);
+        // Aggregate income by month
+        income.forEach(inc -> {
+            String monthKey = inc.getIncomeDate().format(formatter);
+            incomeByMonth.merge(monthKey, inc.getAmount(), Double::sum);
         });
         
         // Combine into monthly comparison
@@ -197,9 +208,9 @@ public class ReportService {
         
         return allMonths.stream()
             .map(month -> {
-                double income = incomeByMonth.getOrDefault(month, 0.0);
-                double expense = expensesByMonth.getOrDefault(month, 0.0);
-                return new FinancialReportDto.MonthlyComparison(month, income, expense, income - expense);
+                double incomeAmount = incomeByMonth.getOrDefault(month, 0.0);
+                double expenseAmount = expensesByMonth.getOrDefault(month, 0.0);
+                return new FinancialReportDto.MonthlyComparison(month, incomeAmount, expenseAmount, incomeAmount - expenseAmount);
             })
             .collect(Collectors.toList());
     }
@@ -213,16 +224,14 @@ public class ReportService {
 
         // Fetch data
         List<Expense> expenses = expenseRepository.findByUserIdAndDateRange(DEFAULT_USER_ID, startDate, endDate);
-        Instant startInstant = startDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
-        Instant endInstant = endDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
-        List<PaymentEntity> payments = paymentRepository.findByUserIdAndDateRange(DEFAULT_USER_ID, startInstant, endInstant);
+        List<Income> income = incomeRepository.findByUserIdAndDateRange(DEFAULT_USER_ID, startDate, endDate);
 
         ProfitLossReportDto report = new ProfitLossReportDto();
         List<ProfitLossReportDto.PLLineItem> lineItems = new ArrayList<>();
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         // Calculate totals
-        double totalIncome = payments.stream().mapToDouble(PaymentEntity::getAmount).sum();
+        double totalIncome = income.stream().mapToDouble(Income::getAmount).sum();
         double totalExpenses = expenses.stream().mapToDouble(Expense::getAmount).sum();
 
         // INCOME SECTION
@@ -230,16 +239,13 @@ public class ReportService {
         incomeCategory.setIsCategory(true);
         incomeCategory.setExpanded(true);
 
-        // Group income by category/type (based on guest_name or description)
-        Map<String, List<PaymentEntity>> incomeByType = new HashMap<>();
-        for (PaymentEntity payment : payments) {
-            String type = categorizeIncome(payment);
-            incomeByType.computeIfAbsent(type, k -> new ArrayList<>()).add(payment);
-        }
+        // Group income by category
+        Map<String, List<Income>> incomeByType = income.stream()
+            .collect(Collectors.groupingBy(i -> i.getCategory() != null ? i.getCategory() : "Other Revenue"));
 
         List<ProfitLossReportDto.PLLineItem> incomeChildren = new ArrayList<>();
-        for (Map.Entry<String, List<PaymentEntity>> entry : incomeByType.entrySet()) {
-            double amount = entry.getValue().stream().mapToDouble(PaymentEntity::getAmount).sum();
+        for (Map.Entry<String, List<Income>> entry : incomeByType.entrySet()) {
+            double amount = entry.getValue().stream().mapToDouble(Income::getAmount).sum();
             double percentage = totalIncome > 0 ? (amount / totalIncome) * 100 : 0;
 
             ProfitLossReportDto.PLLineItem child = new ProfitLossReportDto.PLLineItem(entry.getKey(), amount);
@@ -248,11 +254,11 @@ public class ReportService {
 
             // Add transactions
             List<ProfitLossReportDto.Transaction> transactions = entry.getValue().stream()
-                .map(p -> new ProfitLossReportDto.Transaction(
-                    p.getPaymentDate().atZone(ZoneId.systemDefault()).toLocalDate().format(dateFormatter),
-                    p.getGuestName() != null ? p.getGuestName() : "Payment",
-                    p.getAmount(),
-                    p.getReservationId()
+                .map(i -> new ProfitLossReportDto.Transaction(
+                    i.getIncomeDate().format(dateFormatter),
+                    i.getSource() != null ? i.getSource() : "Income",
+                    i.getAmount(),
+                    i.getReferenceNumber()
                 ))
                 .collect(Collectors.toList());
             child.setTransactions(transactions);
@@ -324,29 +330,7 @@ public class ReportService {
         return report;
     }
 
-    private String categorizeIncome(PaymentEntity payment) {
-        String guestName = payment.getGuestName();
-        String reservationId = payment.getReservationId();
 
-        if (reservationId != null) {
-            if (reservationId.startsWith("ROOM") || reservationId.startsWith("CABIN") || reservationId.startsWith("SUITE")) {
-                return "Room Revenue";
-            } else if (reservationId.startsWith("REST") || reservationId.startsWith("BAR") || 
-                       reservationId.startsWith("EVENT") || reservationId.startsWith("RS")) {
-                return "Food & Beverage";
-            } else if (reservationId.startsWith("ACT") || reservationId.startsWith("SPA")) {
-                return "Activities & Tours";
-            }
-        }
-
-        if (guestName != null) {
-            if (guestName.contains("Gift") || guestName.contains("Pet") || guestName.contains("Late")) {
-                return "Other Income";
-            }
-        }
-
-        return "Room Revenue"; // Default
-    }
 
     private double calculateCategoryTotal(Map<String, List<Expense>> expensesByCategory, List<String> categories) {
         return categories.stream()

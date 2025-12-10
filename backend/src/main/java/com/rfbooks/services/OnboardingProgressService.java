@@ -6,6 +6,7 @@ import com.rfbooks.repos.ChartOfAccountRepository;
 import com.rfbooks.repos.OnboardingProgressRepository;
 import com.rfbooks.repos.ProductServiceRepository;
 import com.rfbooks.repos.PlaidConnectionRepository;
+import com.rfbooks.repos.TaxRateRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,17 +20,20 @@ public class OnboardingProgressService {
     private final ChartOfAccountRepository chartOfAccountRepository;
     private final ProductServiceRepository productServiceRepository;
     private final PlaidConnectionRepository plaidConnectionRepository;
+    private final TaxRateRepository taxRateRepository;
 
     @Autowired
     public OnboardingProgressService(
             OnboardingProgressRepository progressRepository,
             ChartOfAccountRepository chartOfAccountRepository,
             ProductServiceRepository productServiceRepository,
-            PlaidConnectionRepository plaidConnectionRepository) {
+            PlaidConnectionRepository plaidConnectionRepository,
+            TaxRateRepository taxRateRepository) {
         this.progressRepository = progressRepository;
         this.chartOfAccountRepository = chartOfAccountRepository;
         this.productServiceRepository = productServiceRepository;
         this.plaidConnectionRepository = plaidConnectionRepository;
+        this.taxRateRepository = taxRateRepository;
     }
 
     @Transactional(readOnly = true)
@@ -37,6 +41,7 @@ public class OnboardingProgressService {
         // Check actual data instead of relying on stored progress flags
         boolean hasChartOfAccounts = chartOfAccountRepository.countByUserId(DEFAULT_USER_ID) > 0;
         boolean hasProductsServices = productServiceRepository.countByUserId(DEFAULT_USER_ID) > 0;
+        boolean hasTaxesConfigured = taxRateRepository.findByUserIdOrderByNameAsc(DEFAULT_USER_ID).size() > 0;
         boolean hasBankConnection = plaidConnectionRepository.findByUserId(DEFAULT_USER_ID)
                 .map(conn -> conn.getAccessToken() != null && !conn.getAccessToken().isEmpty())
                 .orElse(false);
@@ -56,6 +61,7 @@ public class OnboardingProgressService {
                 hasBankConnection,
                 hasChartOfAccounts,
                 hasProductsServices,
+                hasTaxesConfigured,
                 isComplete
         );
     }
@@ -71,6 +77,13 @@ public class OnboardingProgressService {
     public void markProductsServicesCreated() {
         OnboardingProgress progress = getOrCreateProgress();
         progress.setProductsServicesCreated(true);
+        progressRepository.save(progress);
+    }
+
+    @Transactional
+    public void markTaxesConfigured() {
+        OnboardingProgress progress = getOrCreateProgress();
+        progress.setTaxesConfigured(true);
         progressRepository.save(progress);
     }
 
