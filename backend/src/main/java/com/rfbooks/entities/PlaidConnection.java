@@ -33,6 +33,9 @@ public class PlaidConnection {
     @Column(nullable = false)
     private Boolean active = true;
 
+    @Column(name = "sync_cursor")
+    private String syncCursor;
+
     // Constructors
     public PlaidConnection() {}
 
@@ -68,4 +71,7 @@ public class PlaidConnection {
 
     public Boolean getActive() { return active; }
     public void setActive(Boolean active) { this.active = active; }
+
+    public String getSyncCursor() { return syncCursor; }
+    public void setSyncCursor(String syncCursor) { this.syncCursor = syncCursor; }
 }

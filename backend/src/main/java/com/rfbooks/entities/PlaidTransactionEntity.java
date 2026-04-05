@@ -36,6 +36,9 @@ public class PlaidTransactionEntity {
     @Column(name = "pending")
     private Boolean pending;
 
+    @Column(name = "category")
+    private String category;
+
     @Column(name = "created_at")
     private Instant createdAt;
 
@@ -115,6 +118,14 @@ public class PlaidTransactionEntity {
 
     public void setPending(Boolean pending) {
         this.pending = pending;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 
     public Instant getCreatedAt() {

@@ -3,67 +3,94 @@
     <div>
       <h1 class="title">RF Books · Reconciliation Center</h1>
       <p class="subtitle">
-        Manual reconciliation · Match income and expenses to bank transactions
+        Match income and expenses to bank transactions
       </p>
     </div>
     <div class="header-actions">
+      <button type="button" class="btn-primary" (click)="smartMatch()" [disabled]="isAutoMatching()">
+        {{ isAutoMatching() ? 'Matching...' : '🤖 Smart Match' }}
+      </button>
       <button type="button" class="btn-primary" (click)="runNow()" [disabled]="isLoading()">
         {{ isLoading() ? 'Refreshing...' : 'Refresh Data' }}
-      </button>
-      <button type="button" class="btn-link" (click)="goToSettings()">
-        ⚙️ Settings
       </button>
     </div>
   </header>
 
-  <!-- Configuration Incomplete Warning -->
-  <div class="bank-banner warning" *ngIf="showConfigWarning()">
-    <div class="banner-content">
-      <span class="banner-icon">⚠️</span>
-      <div>
-        <strong>Setup Incomplete</strong>
-        <p>Your account setup is missing: {{ missingItems().join(', ') }}. Complete setup to use all features.</p>
+  <!-- Auto-match result banner -->
+  @if (autoMatchResult()) {
+    <div class="bank-banner">
+      <span>{{ autoMatchResult() }}</span>
+      <button type="button" class="btn-close" (click)="autoMatchResult.set(null)" title="Dismiss">✕</button>
+    </div>
+  }
+
+  <!-- Auto-match Suggestions Panel -->
+  @if (suggestions().length > 0) {
+    <div class="suggestions-panel card">
+      <div class="suggestions-header">
+        <h3>🤖 Match Suggestions ({{ suggestions().length }})</h3>
+        <button type="button" class="btn-primary" (click)="acceptAllSuggestions()" [disabled]="isAutoMatching()">
+          Accept All
+        </button>
+      </div>
+      <div class="suggestions-list">
+        @for (suggestion of suggestions(); track suggestion.id) {
+          <div class="suggestion-item">
+            <div class="suggestion-info">
+              <span class="confidence-badge" [ngClass]="getConfidenceClass(suggestion.confidenceScore)">
+                {{ suggestion.confidenceScore }}%
+              </span>
+              <div class="suggestion-details">
+                <span class="suggestion-type">
+                  {{ suggestion.expenseId ? 'Expense #' + suggestion.expenseId : 'Income #' + suggestion.incomeId }}
+                  → Txn {{ suggestion.transactionId | slice:0:8 }}...
+                </span>
+                <span class="suggestion-reasons">{{ suggestion.matchReasons }}</span>
+              </div>
+            </div>
+            <div class="suggestion-actions">
+              <button type="button" class="btn-accept" (click)="acceptSuggestion(suggestion)">✓</button>
+              <button type="button" class="btn-reject" (click)="rejectSuggestion(suggestion)">✕</button>
+            </div>
+          </div>
+        }
       </div>
     </div>
-    <div class="banner-actions">
-      <button type="button" class="btn secondary-sm" (click)="goToCompleteSetup()">
-        Complete Setup
-      </button>
-      <button type="button" class="btn-close" (click)="dismissConfigWarning()" title="Dismiss">
-        ✕
-      </button>
-    </div>
-  </div>
+  }
 
   <!-- Reconciliation Issues Warning -->
-  <div class="bank-banner warning" *ngIf="showReconciliationIssues() && hasIssues() && !showConfigWarning()">
-    <div class="banner-content">
-      <span class="banner-icon">⚠️</span>
-      <div>
-        <strong>Reconciliation Issues Found</strong>
-        <p>{{ unmatchedCount() }} unmatched transaction(s) need attention.</p>
+  @if (showReconciliationIssues() && hasIssues()) {
+    <div class="bank-banner warning">
+      <div class="banner-content">
+        <span class="banner-icon">⚠️</span>
+        <div>
+          <strong>Reconciliation Issues Found</strong>
+          <p>{{ unmatchedCount() }} unmatched transaction(s) need attention.</p>
+        </div>
+      </div>
+      <div class="banner-actions">
+        <button type="button" class="btn-close" (click)="showReconciliationIssues.set(false)" title="Dismiss">✕</button>
       </div>
     </div>
-    <div class="banner-actions">
-      <button type="button" class="btn-close" (click)="showReconciliationIssues.set(false)" title="Dismiss">
-        ✕
+  }
+
+  @if (!bankConnected()) {
+    <div class="bank-banner">
+      <span>Bank account not connected yet.</span>
+      <button type="button" class="btn primary" (click)="goToOnboarding()">
+        Connect Bank with Plaid
       </button>
     </div>
-  </div>
+  }
 
-  <div class="bank-banner" *ngIf="!bankConnected() && !showConfigWarning()">
-  <span>Bank account not connected yet.</span>
-  <button type="button" class="btn primary" (click)="goToOnboarding()">
-    Connect Bank with Plaid
-  </button>
-</div>
-
-<div class="bank-banner error" *ngIf="connectionError() && bankConnected()">
-  <span>⚠️ Bank connection lost or token expired. Please reconnect your bank account.</span>
-  <button type="button" class="btn primary" (click)="goToOnboarding()">
-    Reconnect Bank
-  </button>
-</div>
+  @if (connectionError() && bankConnected()) {
+    <div class="bank-banner error">
+      <span>⚠️ Bank connection lost or token expired. Please reconnect your bank account.</span>
+      <button type="button" class="btn primary" (click)="goToOnboarding()">
+        Reconnect Bank
+      </button>
+    </div>
+  }
 
   <!-- Reconciliation Tabs -->
   <div class="tabs">
@@ -82,7 +109,8 @@
   </div>
 
   <!-- Summary Cards -->
-  <section class="summary-cards" *ngIf="summary()">
+  @if (summary()) {
+  <section class="summary-cards">
     <div class="card summary-card matched">
       <div class="card-value">{{ matchedCount() }}</div>
       <div class="card-label">Matched</div>
@@ -95,14 +123,24 @@
       <div class="card-value">{{ summary()?.totalBankTransactions || 0 }}</div>
       <div class="card-label">Bank Transactions</div>
     </div>
+    @if (currentBalance() !== null) {
+      <div class="card summary-card balance">
+        <div class="card-value">{{ currentBalance() | currency }}</div>
+        <div class="card-label">Current Balance</div>
+      </div>
+    }
   </section>
+  }
 
-  <div *ngIf="isLoading()" class="loading-overlay">
+  @if (isLoading()) {
+  <div class="loading-overlay">
     <div class="loader"></div>
   </div>
+  }
 
   <!-- Expense Reconciliation Tab -->
-  <div *ngIf="activeTab() === 'expenses'" class="tab-content">
+  @if (activeTab() === 'expenses') {
+  <div class="tab-content">
     <!-- View Toggle -->
     <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
       <button 
@@ -226,9 +264,11 @@
       }
     </div>
   </div>
+  }
 
   <!-- Income Reconciliation Tab -->
-  <div *ngIf="activeTab() === 'income'" class="tab-content">
+  @if (activeTab() === 'income') {
+  <div class="tab-content">
     <!-- View Toggle -->
     <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
       <button 
@@ -352,4 +392,5 @@
       }
     </div>
   </div>
+  }
 </div>

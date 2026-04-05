@@ -1,15 +1,15 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { Payment, ReconciliationMatch, ReconciliationSummary, Expense, Income } from './reconciliation.models';
+import { ReconciliationSummary, Expense, Income, MatchSuggestion } from './reconciliation.models';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ReconciliationService {
-  private readonly baseUrl = 'http://localhost:8081/api/reconciliation';
-  private readonly expenseUrl = 'http://localhost:8081/api/expenses';
-  private readonly incomeUrl = 'http://localhost:8081/api/income';
+  private readonly baseUrl = '/api/reconciliation';
+  private readonly expenseUrl = '/api/expenses';
+  private readonly incomeUrl = '/api/income';
 
   constructor(private http: HttpClient) {}
 
@@ -21,45 +21,36 @@ export class ReconciliationService {
     return this.http.post<ReconciliationSummary>(`${this.baseUrl}/refresh`, {});
   }
 
-  getPayments(from?: string, to?: string): Observable<Payment[]> {
-    const params: any = {};
-    if (from) params.from = from;
-    if (to) params.to = to;
-    return this.http.get<Payment[]>(`${this.baseUrl}/payments`, { params });
+  // --- Auto-match suggestion APIs ---
+
+  generateSuggestions(): Observable<MatchSuggestion[]> {
+    return this.http.post<MatchSuggestion[]>(`${this.baseUrl}/suggestions/generate`, {});
   }
 
-  runReconciliation(from: string, to: string): Observable<ReconciliationMatch[]> {
-    return this.http.post<ReconciliationMatch[]>(`${this.baseUrl}/run`, {
-      from,
-      to
-    });
+  getSuggestions(): Observable<MatchSuggestion[]> {
+    return this.http.get<MatchSuggestion[]>(`${this.baseUrl}/suggestions`);
   }
 
-  createManualMatch(paymentId: string, transactionId: string): Observable<any> {
-    return this.http.post(`${this.baseUrl}/match`, {
-      paymentId,
-      transactionId
-    });
+  acceptSuggestion(id: number): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/suggestions/${id}/accept`, {});
   }
 
-  deleteManualMatch(paymentId: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/match/${paymentId}`);
+  rejectSuggestion(id: number): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/suggestions/${id}/reject`, {});
   }
 
-  getManualMatches(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/matches`);
+  autoMatchAll(): Observable<{ accepted: number }> {
+    return this.http.post<{ accepted: number }>(`${this.baseUrl}/auto-match`, {});
   }
 
-  // Expense reconciliation
+  // --- Expense reconciliation ---
+
   getExpenses(): Observable<Expense[]> {
     return this.http.get<Expense[]>(this.expenseUrl);
   }
 
   createManualExpenseMatch(expenseId: number, transactionId: string): Observable<any> {
-    return this.http.post(`${this.baseUrl}/match/expense`, {
-      expenseId,
-      transactionId
-    });
+    return this.http.post(`${this.baseUrl}/match/expense`, { expenseId, transactionId });
   }
 
   deleteManualExpenseMatch(expenseId: number): Observable<void> {
@@ -70,16 +61,14 @@ export class ReconciliationService {
     return this.http.get<any[]>(`${this.baseUrl}/matches/expenses`);
   }
 
-  // Income reconciliation
+  // --- Income reconciliation ---
+
   getIncome(): Observable<Income[]> {
     return this.http.get<Income[]>(this.incomeUrl);
   }
 
   createManualIncomeMatch(incomeId: number, transactionId: string): Observable<any> {
-    return this.http.post(`${this.baseUrl}/match/income`, {
-      incomeId,
-      transactionId
-    });
+    return this.http.post(`${this.baseUrl}/match/income`, { incomeId, transactionId });
   }
 
   deleteManualIncomeMatch(incomeId: number): Observable<void> {

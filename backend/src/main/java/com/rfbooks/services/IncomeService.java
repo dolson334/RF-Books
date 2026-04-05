@@ -1,5 +1,6 @@
 package com.rfbooks.services;
 
+import com.rfbooks.config.AuthContext;
 import com.rfbooks.entities.Income;
 import com.rfbooks.repos.IncomeRepository;
 import org.springframework.stereotype.Service;
@@ -12,8 +13,6 @@ import java.util.Optional;
 @Service
 public class IncomeService {
 
-    private static final String DEFAULT_USER_ID = "default-user";
-    
     private final IncomeRepository incomeRepository;
 
     public IncomeService(IncomeRepository incomeRepository) {
@@ -21,11 +20,11 @@ public class IncomeService {
     }
 
     public List<Income> getAllIncome() {
-        return incomeRepository.findByUserIdOrderByIncomeDateDesc(DEFAULT_USER_ID);
+        return incomeRepository.findByUserIdOrderByIncomeDateDesc(AuthContext.getCurrentUserId());
     }
 
     public List<Income> getIncomeByDateRange(LocalDate startDate, LocalDate endDate) {
-        return incomeRepository.findByUserIdAndDateRange(DEFAULT_USER_ID, startDate, endDate);
+        return incomeRepository.findByUserIdAndDateRange(AuthContext.getCurrentUserId(), startDate, endDate);
     }
 
     public Optional<Income> getIncomeById(Long id) {
@@ -33,7 +32,7 @@ public class IncomeService {
     }
 
     public Income createIncome(Income income) {
-        income.setUserId(DEFAULT_USER_ID);
+        income.setUserId(AuthContext.getCurrentUserId());
         income.setCreatedAt(Instant.now());
         income.setUpdatedAt(Instant.now());
         return incomeRepository.save(income);

@@ -26,6 +26,12 @@ public class ManualMatchExpense {
     @Column(name = "matched_by")
     private String matchedBy;
 
+    @Column(name = "confidence_score")
+    private Integer confidenceScore;
+
+    @Column(name = "match_type")
+    private String matchType = "MANUAL";
+
     @Column(name = "created_at")
     private Instant createdAt;
 
@@ -96,5 +102,21 @@ public class ManualMatchExpense {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Integer getConfidenceScore() {
+        return confidenceScore;
+    }
+
+    public void setConfidenceScore(Integer confidenceScore) {
+        this.confidenceScore = confidenceScore;
+    }
+
+    public String getMatchType() {
+        return matchType;
+    }
+
+    public void setMatchType(String matchType) {
+        this.matchType = matchType;
     }
 }

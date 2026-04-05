@@ -1,10 +1,8 @@
--- Initialize RF Books database with default schema
+-- Initialize RF Books database
 -- This runs only on first container creation
 
 -- Create test resort schema for demo
 CREATE SCHEMA IF NOT EXISTS testresort;
-
--- Grant permissions
 GRANT ALL PRIVILEGES ON SCHEMA testresort TO postgres;
 
 -- Set default search path

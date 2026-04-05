@@ -1,33 +1,24 @@
 package com.rfbooks.services;
 
+import com.rfbooks.config.AuthContext;
 import com.rfbooks.dtos.ReconciliationSummary;
 import com.rfbooks.entities.ManualMatchExpense;
 import com.rfbooks.entities.ManualMatchIncome;
 import com.rfbooks.entities.ReconciliationRun;
-import com.rfbooks.nonentities.BankTransactionSummary;
-import com.rfbooks.nonentities.ReconciliationMatch;
 import com.rfbooks.nonentities.PlaidTransaction;
 import com.rfbooks.repos.*;
-import com.rfbooks.repos.ManualMatchExpenseRepository;
-import com.rfbooks.repos.ManualMatchIncomeRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class ReconciliationService {
-
-    private static final String DEFAULT_USER_ID = "default-user";
     
     private final PlaidService plaidService;
     private final ReconciliationRunRepository runRepository;
@@ -55,7 +46,7 @@ public class ReconciliationService {
 
     // Expense reconciliation methods
     public ManualMatchExpense createManualExpenseMatch(Long expenseId, String transactionId) {
-        ManualMatchExpense match = new ManualMatchExpense(DEFAULT_USER_ID, expenseId, transactionId);
+        ManualMatchExpense match = new ManualMatchExpense(AuthContext.getCurrentUserId(), expenseId, transactionId);
         
         // Mark the expense as reconciled
         expenseRepository.findById(expenseId).ifPresent(expense -> {
@@ -67,7 +58,7 @@ public class ReconciliationService {
     }
 
     public void deleteManualExpenseMatch(Long expenseId) {
-        manualMatchExpenseRepository.findByUserIdAndExpenseId(DEFAULT_USER_ID, expenseId)
+        manualMatchExpenseRepository.findByUserIdAndExpenseId(AuthContext.getCurrentUserId(), expenseId)
                 .ifPresent(match -> {
                     manualMatchExpenseRepository.delete(match);
                     
@@ -80,12 +71,12 @@ public class ReconciliationService {
     }
 
     public List<ManualMatchExpense> getManualExpenseMatches() {
-        return manualMatchExpenseRepository.findByUserId(DEFAULT_USER_ID);
+        return manualMatchExpenseRepository.findByUserId(AuthContext.getCurrentUserId());
     }
 
     // Income reconciliation methods
     public ManualMatchIncome createManualIncomeMatch(Long incomeId, String transactionId) {
-        ManualMatchIncome match = new ManualMatchIncome(DEFAULT_USER_ID, incomeId, transactionId);
+        ManualMatchIncome match = new ManualMatchIncome(AuthContext.getCurrentUserId(), incomeId, transactionId);
         
         // Mark the income as reconciled
         incomeRepository.findById(incomeId).ifPresent(income -> {
@@ -97,7 +88,7 @@ public class ReconciliationService {
     }
 
     public void deleteManualIncomeMatch(Long incomeId) {
-        manualMatchIncomeRepository.findByUserIdAndIncomeId(DEFAULT_USER_ID, incomeId)
+        manualMatchIncomeRepository.findByUserIdAndIncomeId(AuthContext.getCurrentUserId(), incomeId)
                 .ifPresent(match -> {
                     manualMatchIncomeRepository.delete(match);
                     
@@ -110,7 +101,7 @@ public class ReconciliationService {
     }
 
     public List<ManualMatchIncome> getManualIncomeMatches() {
-        return manualMatchIncomeRepository.findByUserId(DEFAULT_USER_ID);
+        return manualMatchIncomeRepository.findByUserId(AuthContext.getCurrentUserId());
     }
 
     public ReconciliationSummary getReconciliationSummary() {
@@ -125,8 +116,8 @@ public class ReconciliationService {
             );
             
             // Get all manual matches
-            List<ManualMatchExpense> expenseMatches = manualMatchExpenseRepository.findByUserId(DEFAULT_USER_ID);
-            List<ManualMatchIncome> incomeMatches = manualMatchIncomeRepository.findByUserId(DEFAULT_USER_ID);
+            List<ManualMatchExpense> expenseMatches = manualMatchExpenseRepository.findByUserId(AuthContext.getCurrentUserId());
+            List<ManualMatchIncome> incomeMatches = manualMatchIncomeRepository.findByUserId(AuthContext.getCurrentUserId());
             
             // Calculate counts
             int totalExpenses = (int) expenseRepository.count();
@@ -162,7 +153,7 @@ public class ReconciliationService {
             
             // Save to database
             ReconciliationRun run = new ReconciliationRun();
-            run.setUserId(DEFAULT_USER_ID);
+            run.setUserId(AuthContext.getCurrentUserId());
             run.setRunAt(Instant.now());
             run.setStartDate(startDate);
             run.setEndDate(endDate);

@@ -1,5 +1,6 @@
 package com.rfbooks.services;
 
+import com.rfbooks.config.AuthContext;
 import com.rfbooks.entities.Expense;
 import com.rfbooks.repos.ExpenseRepository;
 import org.springframework.stereotype.Service;
@@ -12,8 +13,6 @@ import java.util.Optional;
 @Service
 public class ExpenseService {
 
-    private static final String DEFAULT_USER_ID = "default-user";
-    
     private final ExpenseRepository expenseRepository;
 
     public ExpenseService(ExpenseRepository expenseRepository) {
@@ -21,11 +20,11 @@ public class ExpenseService {
     }
 
     public List<Expense> getAllExpenses() {
-        return expenseRepository.findByUserIdOrderByExpenseDateDesc(DEFAULT_USER_ID);
+        return expenseRepository.findByUserIdOrderByExpenseDateDesc(AuthContext.getCurrentUserId());
     }
 
     public List<Expense> getExpensesByDateRange(LocalDate startDate, LocalDate endDate) {
-        return expenseRepository.findByUserIdAndDateRange(DEFAULT_USER_ID, startDate, endDate);
+        return expenseRepository.findByUserIdAndDateRange(AuthContext.getCurrentUserId(), startDate, endDate);
     }
 
     public Optional<Expense> getExpenseById(Long id) {
@@ -33,7 +32,7 @@ public class ExpenseService {
     }
 
     public Expense createExpense(Expense expense) {
-        expense.setUserId(DEFAULT_USER_ID);
+        expense.setUserId(AuthContext.getCurrentUserId());
         expense.setCreatedAt(Instant.now());
         expense.setUpdatedAt(Instant.now());
         return expenseRepository.save(expense);

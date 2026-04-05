@@ -1,15 +1,12 @@
 import { Component } from '@angular/core';
-import { RouterOutlet, Router } from '@angular/router';
-import { NavigationComponent } from './navigation/navigation.component';
-import { CommonModule } from '@angular/common';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'rf-root',
   standalone: true,
-  imports: [RouterOutlet, NavigationComponent, CommonModule],
+  imports: [RouterOutlet],
   template: `
     <div class="app-container">
-      <rf-navigation *ngIf="showNavigation()"></rf-navigation>
       <main class="main-content">
         <router-outlet></router-outlet>
       </main>
@@ -28,13 +25,5 @@ import { CommonModule } from '@angular/common';
     }
   `]
 })
-export class AppComponent {
-  constructor(private router: Router) {}
-
-  showNavigation(): boolean {
-    // Hide navigation on onboarding page
-    const url = this.router.url;
-    return !url.includes('/onboarding') || url.includes('/settings');
-  }
-}
+export class AppComponent {}
 

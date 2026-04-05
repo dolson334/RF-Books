@@ -1,18 +1,17 @@
-import { Component, computed, signal, OnInit, effect } from '@angular/core';
+import { Component, computed, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import {
-  ReconciliationMatch,
   ReconciliationSummary,
-  ReconciliationStatus,
   BankTransactionSummary,
   Expense,
   Income,
+  MatchSuggestion,
 } from './reconciliation.models';
 import { ReconciliationService } from './reconciliation.service';
 import { PlaidService } from './plaid.service';
 import { Router } from '@angular/router';
-import { OnboardingStatusService } from '../services/onboarding-status.service';
 
 @Component({
   selector: 'rf-reconciliation-center',
@@ -26,13 +25,8 @@ export class ReconciliationComponent implements OnInit {
   connectionError = signal<boolean>(false);
 
   isLoading = signal<boolean>(false);
-  matches = signal<ReconciliationMatch[]>([]);
   summary = signal<ReconciliationSummary | null>(null);
   lastRunTime = signal<string>('');
-
-  // Onboarding status
-  showConfigWarning = signal<boolean>(false);
-  missingItems = signal<string[]>([]);
   showReconciliationIssues = signal<boolean>(false);
 
   // Expense reconciliation
@@ -49,6 +43,12 @@ export class ReconciliationComponent implements OnInit {
 
   // Bank transactions
   bankTransactions = signal<BankTransactionSummary[]>([]);
+  currentBalance = signal<number | null>(null);
+
+  // Auto-match suggestions
+  suggestions = signal<MatchSuggestion[]>([]);
+  isAutoMatching = signal<boolean>(false);
+  autoMatchResult = signal<string | null>(null);
 
   // View toggle
   showMatched = signal<boolean>(false);
@@ -71,62 +71,57 @@ export class ReconciliationComponent implements OnInit {
     return s ? s.hasIssues : false;
   });
 
-  readonly unreconciledExpenses = computed(() => {
-    return this.expenses().filter(e => !e.reconciled);
+  readonly unreconciledExpenses = computed(() =>
+    this.expenses().filter(e => !e.reconciled)
+  );
+
+  readonly unreconciledIncome = computed(() =>
+    this.income().filter(i => !i.reconciled)
+  );
+
+  readonly reconciledExpenses = computed(() =>
+    this.expenses().filter(e => e.reconciled)
+  );
+
+  readonly reconciledIncome = computed(() =>
+    this.income().filter(i => i.reconciled)
+  );
+
+  readonly debitTransactions = computed(() =>
+    this.bankTransactions().filter(tx => tx.amount < 0)
+  );
+
+  readonly creditTransactions = computed(() =>
+    this.bankTransactions().filter(tx => tx.amount > 0)
+  );
+
+  readonly reconciliationProgress = computed(() => {
+    const s = this.summary();
+    if (!s || s.totalPayments === 0) return 0;
+    return Math.round((s.matchedCount / (s.totalPayments + s.totalBankTransactions)) * 200);
   });
 
-  readonly unreconciledIncome = computed(() => {
-    return this.income().filter(i => !i.reconciled);
-  });
+  readonly expenseSuggestions = computed(() =>
+    this.suggestions().filter(s => s.expenseId != null)
+  );
 
-  readonly reconciledExpenses = computed(() => {
-    return this.expenses().filter(e => e.reconciled);
-  });
-
-  readonly reconciledIncome = computed(() => {
-    return this.income().filter(i => i.reconciled);
-  });
-
-  readonly debitTransactions = computed(() => {
-    return this.bankTransactions().filter(tx => tx.amount < 0);
-  });
-
-  readonly creditTransactions = computed(() => {
-    return this.bankTransactions().filter(tx => tx.amount > 0);
-  });
+  readonly incomeSuggestions = computed(() =>
+    this.suggestions().filter(s => s.incomeId != null)
+  );
 
   constructor(
     private reconService: ReconciliationService,
     private plaidService: PlaidService,
-    private router: Router,
-    private onboardingStatus: OnboardingStatusService
+    private router: Router
   ) {}
 
   ngOnInit(): void {
-    // Check backend connection status
     this.checkConnectionStatus();
-    
-    // Check onboarding status from backend
-    this.onboardingStatus.checkStatus();
-    
-    // Check for missing configuration
-    this.checkMissingConfiguration();
-    
-    // Load latest reconciliation results
     this.loadLatestReconciliation();
-    
-    // Load expenses and income
     this.loadExpenses();
     this.loadIncome();
-    
-    // Load bank transactions
     this.loadBankTransactions();
-    
-    // Auto-refresh every 5 minutes
-    setInterval(() => {
-      this.loadLatestReconciliation();
-      this.loadBankTransactions();
-    }, 5 * 60 * 1000);
+    this.loadBalance();
   }
 
   loadExpenses(): void {
@@ -143,59 +138,61 @@ export class ReconciliationComponent implements OnInit {
     });
   }
 
-  loadBankTransactions(): void {
-    // Get transactions for last 90 days
+  loadBalance(): void {
+    this.plaidService.getBalance().subscribe({
+      next: res => this.currentBalance.set(res.balance),
+      error: () => this.currentBalance.set(null)
+    });
+  }
+
+  async loadBankTransactions(): Promise<void> {
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - 90);
-    
+
     const formatDate = (date: Date) => date.toISOString().split('T')[0];
-    
-    this.plaidService.getTransactions(formatDate(startDate), formatDate(endDate)).subscribe({
-      next: transactions => {
-        // Convert PlaidTransaction to BankTransactionSummary and filter out matched ones
-        const manualExpenseMatches = this.reconService.getManualExpenseMatches();
-        const manualIncomeMatches = this.reconService.getManualIncomeMatches();
-        
-        Promise.all([manualExpenseMatches.toPromise(), manualIncomeMatches.toPromise()]).then(([expenseMatches, incomeMatches]) => {
-          const matchedTxIds = new Set([
-            ...(expenseMatches || []).map((m: any) => m.transactionId),
-            ...(incomeMatches || []).map((m: any) => m.transactionId)
-          ]);
-          
-          // Filter and sort transactions by date (newest first for display)
-          const sortedTransactions = transactions
-            .filter(tx => !matchedTxIds.has(tx.transactionId))
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-          
-          // Note: Plaid doesn't provide running balance per transaction
-          // We calculate it for reference, but it's an approximation
-          // Starting from an assumed balance (ideally fetch current balance from Plaid /accounts/balance/get)
-          let runningBalance = 10000; // TODO: Fetch actual current balance from Plaid API
-          
-          const unmatchedTransactions = sortedTransactions.map((tx, index) => {
-            const txBalance = runningBalance;
-            // Subtract next transaction to calculate previous balance
-            // (working backwards since sorted newest first)
-            runningBalance -= tx.amount;
-            
-            return {
-              id: index,
-              transactionId: tx.transactionId,
-              transactionDate: tx.date,
-              description: tx.name,
-              amount: tx.amount,
-              runningBalance: txBalance, // Balance after this transaction
-              currency: 'USD' as const,
-              source: 'plaid' as const
-            };
-          });
-          
-          this.bankTransactions.set(unmatchedTransactions);
-        });
-      },
-      error: err => console.error('Failed to load bank transactions', err)
-    });
+
+    try {
+      const transactions = await firstValueFrom(
+        this.plaidService.getTransactions(formatDate(startDate), formatDate(endDate))
+      );
+
+      const [expenseMatches, incomeMatches] = await Promise.all([
+        firstValueFrom(this.reconService.getManualExpenseMatches()),
+        firstValueFrom(this.reconService.getManualIncomeMatches())
+      ]);
+
+      const matchedTxIds = new Set([
+        ...(expenseMatches || []).map((m: any) => m.transactionId),
+        ...(incomeMatches || []).map((m: any) => m.transactionId)
+      ]);
+
+      const sortedTransactions = transactions
+        .filter(tx => !matchedTxIds.has(tx.transactionId))
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      let runningBalance = this.currentBalance() ?? 10000;
+
+      const unmatchedTransactions: BankTransactionSummary[] = sortedTransactions.map((tx, index) => {
+        const txBalance = runningBalance;
+        runningBalance -= tx.amount;
+
+        return {
+          id: index,
+          transactionId: tx.transactionId,
+          transactionDate: tx.date,
+          description: tx.name,
+          amount: tx.amount,
+          runningBalance: txBalance,
+          currency: 'USD' as const,
+          source: 'plaid' as const
+        };
+      });
+
+      this.bankTransactions.set(unmatchedTransactions);
+    } catch (err) {
+      console.error('Failed to load bank transactions', err);
+    }
   }
 
   loadLatestReconciliation(): void {
@@ -207,7 +204,6 @@ export class ReconciliationComponent implements OnInit {
           this.lastRunTime.set(this.formatTimestamp(summary.runAt));
           this.showReconciliationIssues.set(summary.hasIssues);
         } else {
-          // No reconciliation runs yet
           this.summary.set(null);
           this.lastRunTime.set('Never');
           this.showReconciliationIssues.set(false);
@@ -220,38 +216,19 @@ export class ReconciliationComponent implements OnInit {
     });
   }
 
-  checkMissingConfiguration(): void {
-    const missingConfig = this.onboardingStatus.missingConfig();
-    if (missingConfig && (missingConfig.chartOfAccounts || missingConfig.productsServices)) {
-      this.showConfigWarning.set(true);
-      this.missingItems.set(this.onboardingStatus.getMissingItems());
-    } else {
-      this.showConfigWarning.set(false);
-      this.missingItems.set([]);
-    }
-  }
-
   formatTimestamp(timestamp: string): string {
     const date = new Date(timestamp);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    
+
     if (diffMins < 1) return 'Just now';
     if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
-    
+
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    
+
     return date.toLocaleString();
-  }
-
-  dismissConfigWarning(): void {
-    this.showConfigWarning.set(false);
-  }
-
-  goToCompleteSetup(): void {
-    this.router.navigate(['/settings']);
   }
 
   checkConnectionStatus(): void {
@@ -259,13 +236,10 @@ export class ReconciliationComponent implements OnInit {
       next: status => {
         this.bankConnected.set(status.connected);
         this.connectionError.set(false);
-        // Sync with localStorage
-        localStorage.setItem('rfbooks_bank_connected', String(status.connected));
       },
       error: () => {
         this.connectionError.set(true);
         this.bankConnected.set(false);
-        localStorage.setItem('rfbooks_bank_connected', 'false');
       },
     });
   }
@@ -280,6 +254,7 @@ export class ReconciliationComponent implements OnInit {
           this.showReconciliationIssues.set(summary.hasIssues);
         }
         this.isLoading.set(false);
+        this.loadBankTransactions();
       },
       error: (err) => {
         console.error('Failed to run reconciliation', err);
@@ -292,32 +267,76 @@ export class ReconciliationComponent implements OnInit {
     this.router.navigate(['/recon/onboarding']);
   }
 
-  goToSettings(): void {
-    this.router.navigate(['/settings']);
-  }
-
-  badgeClass(status: ReconciliationStatus): string {
-    switch (status) {
-      case 'MATCHED':
-        return 'badge matched';
-      case 'MANUAL_MATCH':
-        return 'badge manual-match';
-      case 'MULTIPLE_MATCHES':
-        return 'badge multi';
-      case 'UNMATCHED_BANK_TRANSACTION':
-        return 'badge unmatched-bank';
-      default:
-        return 'badge';
-    }
-  }
-
   setTab(tab: 'income' | 'expenses'): void {
     this.activeTab.set(tab);
     this.clearExpenseSelection();
     this.clearIncomeSelection();
   }
 
-  // Expense matching methods
+  // --- Auto-match ---
+
+  smartMatch(): void {
+    this.isAutoMatching.set(true);
+    this.autoMatchResult.set(null);
+    this.reconService.generateSuggestions().subscribe({
+      next: suggestions => {
+        this.suggestions.set(suggestions);
+        this.isAutoMatching.set(false);
+        if (suggestions.length === 0) {
+          this.autoMatchResult.set('No matches found');
+        }
+      },
+      error: err => {
+        console.error('Auto-match failed', err);
+        this.isAutoMatching.set(false);
+        this.autoMatchResult.set('Auto-match failed');
+      }
+    });
+  }
+
+  acceptSuggestion(suggestion: MatchSuggestion): void {
+    this.reconService.acceptSuggestion(suggestion.id).subscribe({
+      next: () => {
+        this.suggestions.update(list => list.filter(s => s.id !== suggestion.id));
+        this.refreshAll();
+      },
+      error: err => console.error('Failed to accept suggestion', err)
+    });
+  }
+
+  rejectSuggestion(suggestion: MatchSuggestion): void {
+    this.reconService.rejectSuggestion(suggestion.id).subscribe({
+      next: () => {
+        this.suggestions.update(list => list.filter(s => s.id !== suggestion.id));
+      },
+      error: err => console.error('Failed to reject suggestion', err)
+    });
+  }
+
+  acceptAllSuggestions(): void {
+    this.isAutoMatching.set(true);
+    this.reconService.autoMatchAll().subscribe({
+      next: result => {
+        this.isAutoMatching.set(false);
+        this.autoMatchResult.set(`${result.accepted} matches accepted`);
+        this.suggestions.set([]);
+        this.refreshAll();
+      },
+      error: err => {
+        console.error('Failed to accept all', err);
+        this.isAutoMatching.set(false);
+      }
+    });
+  }
+
+  getConfidenceClass(score: number): string {
+    if (score >= 70) return 'confidence-high';
+    if (score >= 40) return 'confidence-medium';
+    return 'confidence-low';
+  }
+
+  // --- Expense matching ---
+
   selectExpense(expense: Expense): void {
     this.selectedExpense.set(expense);
   }
@@ -333,11 +352,7 @@ export class ReconciliationComponent implements OnInit {
 
   unmatchExpense(expenseId: number): void {
     this.reconService.deleteManualExpenseMatch(expenseId).subscribe({
-      next: () => {
-        this.loadExpenses();
-        this.loadBankTransactions();
-        this.loadLatestReconciliation();
-      },
+      next: () => this.refreshAll(),
       error: err => console.error('Failed to unmatch expense', err)
     });
   }
@@ -345,7 +360,7 @@ export class ReconciliationComponent implements OnInit {
   createExpenseMatch(): void {
     const expense = this.selectedExpense();
     const transaction = this.selectedExpenseTransaction();
-    
+
     if (!expense || !transaction || !transaction.transactionId) return;
 
     this.isMatchingExpense.set(true);
@@ -353,8 +368,7 @@ export class ReconciliationComponent implements OnInit {
       next: () => {
         this.isMatchingExpense.set(false);
         this.clearExpenseSelection();
-        this.loadExpenses();
-        this.runNow(); // Re-run to update unmatched transactions
+        this.refreshAll();
       },
       error: (err) => {
         console.error('Failed to create expense match', err);
@@ -363,7 +377,8 @@ export class ReconciliationComponent implements OnInit {
     });
   }
 
-  // Income matching methods
+  // --- Income matching ---
+
   selectIncome(income: Income): void {
     this.selectedIncome.set(income);
   }
@@ -379,11 +394,7 @@ export class ReconciliationComponent implements OnInit {
 
   unmatchIncome(incomeId: number): void {
     this.reconService.deleteManualIncomeMatch(incomeId).subscribe({
-      next: () => {
-        this.loadIncome();
-        this.loadBankTransactions();
-        this.loadLatestReconciliation();
-      },
+      next: () => this.refreshAll(),
       error: err => console.error('Failed to unmatch income', err)
     });
   }
@@ -391,7 +402,7 @@ export class ReconciliationComponent implements OnInit {
   createIncomeMatch(): void {
     const income = this.selectedIncome();
     const transaction = this.selectedIncomeTransaction();
-    
+
     if (!income || !transaction || !transaction.transactionId) return;
 
     this.isMatchingIncome.set(true);
@@ -399,13 +410,19 @@ export class ReconciliationComponent implements OnInit {
       next: () => {
         this.isMatchingIncome.set(false);
         this.clearIncomeSelection();
-        this.loadIncome();
-        this.runNow(); // Re-run to update unmatched transactions
+        this.refreshAll();
       },
       error: (err) => {
         console.error('Failed to create income match', err);
         this.isMatchingIncome.set(false);
       }
     });
+  }
+
+  private refreshAll(): void {
+    this.loadExpenses();
+    this.loadIncome();
+    this.loadBankTransactions();
+    this.loadLatestReconciliation();
   }
 }

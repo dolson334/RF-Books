@@ -31,7 +31,8 @@ public class SchemaBasedMultiTenantConnectionProvider implements MultiTenantConn
     public Connection getConnection(Object tenantIdentifier) throws SQLException {
         final Connection connection = getAnyConnection();
         try {
-            connection.createStatement().execute("SET search_path TO " + tenantIdentifier);
+            String schema = String.valueOf(tenantIdentifier).replaceAll("[^a-zA-Z0-9_]", "");
+            connection.createStatement().execute("SET search_path TO \"" + schema + "\"");
         } catch (SQLException e) {
             throw new RuntimeException("Could not set schema for tenant: " + tenantIdentifier, e);
         }
@@ -41,9 +42,8 @@ public class SchemaBasedMultiTenantConnectionProvider implements MultiTenantConn
     @Override
     public void releaseConnection(Object tenantIdentifier, Connection connection) throws SQLException {
         try {
-            connection.createStatement().execute("SET search_path TO public");
+            connection.createStatement().execute("SET search_path TO \"public\"");
         } catch (SQLException e) {
-            // Log but don't throw
             System.err.println("Could not reset schema: " + e.getMessage());
         }
         connection.close();

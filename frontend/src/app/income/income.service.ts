@@ -7,7 +7,7 @@ import { Income } from './income.models';
   providedIn: 'root'
 })
 export class IncomeService {
-  private readonly baseUrl = 'http://localhost:8081/api/income';
+  private readonly baseUrl = '/api/income';
 
   constructor(private http: HttpClient) {}
 

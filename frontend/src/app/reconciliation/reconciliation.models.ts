@@ -1,20 +1,6 @@
 export type CurrencyCode = string;
 export type DataSource = 'rfbooks' | 'plaid';
 
-export interface Payment {
-  id: number;
-  externalId: string;
-  amount: number;
-  currency: CurrencyCode;
-  paymentDate: string;
-  method?: string | null;
-  last4?: string | null;
-  guestName?: string | null;
-  reservationId?: string | null;
-  reconciled: boolean;
-  source: DataSource;
-}
-
 export interface Expense {
   id: number;
   expenseDate: string;
@@ -54,6 +40,7 @@ export interface BankTransactionSummary {
   transactionDate: string;
   description?: string | null;
   source: DataSource;
+  runningBalance?: number;
 }
 
 export interface PlaidTransaction {
@@ -72,7 +59,6 @@ export interface ReconciliationMatch {
   status: ReconciliationStatus;
   differenceAmount: number;
   reason?: string | null;
-  payment?: Payment | null;
   bankTransaction?: BankTransactionSummary | null;
   createdAt: string;
 }
@@ -90,4 +76,14 @@ export interface ReconciliationSummary {
   status: 'COMPLETED' | 'FAILED' | 'NO_BANK_CONNECTION';
   errorMessage?: string;
   hasIssues: boolean;
+}
+
+export interface MatchSuggestion {
+  id: number;
+  expenseId?: number;
+  incomeId?: number;
+  transactionId: string;
+  confidenceScore: number;
+  matchReasons: string;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
 }
