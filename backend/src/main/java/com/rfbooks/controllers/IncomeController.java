@@ -1,6 +1,8 @@
 package com.rfbooks.controllers;
 
 import com.rfbooks.dtos.IncomeRequest;
+import com.rfbooks.dtos.IncomeImportRequest;
+import com.rfbooks.dtos.IncomeImportResponse;
 import com.rfbooks.entities.Income;
 import com.rfbooks.services.IncomeService;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -88,5 +90,13 @@ public class IncomeController {
             @PathVariable Long id) {
         incomeService.deleteIncome(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/import")
+    public ResponseEntity<IncomeImportResponse> importIncome(
+            @RequestParam(required = false) String resortAlias,
+            @RequestBody List<IncomeImportRequest> requests) {
+        IncomeImportResponse response = incomeService.importIncome(requests);
+        return ResponseEntity.ok(response);
     }
 }

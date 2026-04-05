@@ -1,6 +1,7 @@
 package com.rfbooks.config;
 
 import org.hibernate.engine.jdbc.connections.spi.MultiTenantConnectionProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
@@ -8,6 +9,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 @Component
+@ConditionalOnProperty(name = "rfbooks.multitenancy.enabled", havingValue = "true", matchIfMissing = true)
 @SuppressWarnings("rawtypes")
 public class SchemaBasedMultiTenantConnectionProvider implements MultiTenantConnectionProvider {
 

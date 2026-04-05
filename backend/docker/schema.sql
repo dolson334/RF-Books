@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS income (
     description TEXT,
     notes TEXT,
     reconciled BOOLEAN DEFAULT FALSE,
+    external_id VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -49,6 +50,7 @@ CREATE TABLE IF NOT EXISTS income (
 CREATE INDEX IF NOT EXISTS idx_income_user_id ON income(user_id);
 CREATE INDEX IF NOT EXISTS idx_income_date ON income(income_date);
 CREATE INDEX IF NOT EXISTS idx_income_reconciled ON income(reconciled);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_income_user_external_id ON income(user_id, external_id) WHERE external_id IS NOT NULL;
 
 -- ============================================
 -- PLAID / BANK CONNECTION TABLES

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface IncomeRepository extends JpaRepository<Income, Long> {
@@ -18,4 +19,6 @@ public interface IncomeRepository extends JpaRepository<Income, Long> {
     List<Income> findByUserIdAndDateRange(@Param("userId") String userId, 
                                           @Param("startDate") LocalDate startDate, 
                                           @Param("endDate") LocalDate endDate);
+
+    Optional<Income> findByUserIdAndExternalId(String userId, String externalId);
 }

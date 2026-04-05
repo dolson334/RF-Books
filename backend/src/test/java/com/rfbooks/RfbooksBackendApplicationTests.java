@@ -1,9 +1,14 @@
 package com.rfbooks;
 
+import com.rfbooks.config.TestHibernateConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
+@ActiveProfiles("test")
+@Import(TestHibernateConfig.class)
 class RfbooksBackendApplicationTests {
 
     @Test

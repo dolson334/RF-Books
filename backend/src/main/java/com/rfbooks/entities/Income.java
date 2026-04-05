@@ -48,6 +48,9 @@ public class Income {
     @Column(name = "reconciled")
     private Boolean reconciled;
 
+    @Column(name = "external_id")
+    private String externalId;
+
     @Column(name = "created_at")
     private Instant createdAt;
 
@@ -180,5 +183,13 @@ public class Income {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
     }
 }

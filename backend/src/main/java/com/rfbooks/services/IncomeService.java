@@ -1,9 +1,12 @@
 package com.rfbooks.services;
 
 import com.rfbooks.config.AuthContext;
+import com.rfbooks.dtos.IncomeImportRequest;
+import com.rfbooks.dtos.IncomeImportResponse;
 import com.rfbooks.entities.Income;
 import com.rfbooks.repos.IncomeRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -59,5 +62,51 @@ public class IncomeService {
 
     public void deleteIncome(Long id) {
         incomeRepository.deleteById(id);
+    }
+
+    @Transactional
+    public IncomeImportResponse importIncome(List<IncomeImportRequest> requests) {
+        IncomeImportResponse response = new IncomeImportResponse();
+        String userId = AuthContext.getCurrentUserId();
+
+        for (int i = 0; i < requests.size(); i++) {
+            IncomeImportRequest req = requests.get(i);
+            try {
+                if (req.getExternalId() == null || req.getExternalId().isBlank()) {
+                    response.addError("Item " + i + ": externalId is required");
+                    continue;
+                }
+                if (req.getAmount() == null || req.getIncomeDate() == null) {
+                    response.addError("Item " + i + " (" + req.getExternalId() + "): amount and incomeDate are required");
+                    continue;
+                }
+
+                Optional<Income> existing = incomeRepository.findByUserIdAndExternalId(userId, req.getExternalId());
+                if (existing.isPresent()) {
+                    response.incrementSkipped();
+                    continue;
+                }
+
+                Income income = new Income();
+                income.setUserId(userId);
+                income.setExternalId(req.getExternalId());
+                income.setIncomeDate(req.getIncomeDate());
+                income.setAmount(req.getAmount());
+                income.setSource(req.getSource());
+                income.setCategory(req.getCategory());
+                income.setPaymentMethod(req.getPaymentMethod());
+                income.setReferenceNumber(req.getReferenceNumber());
+                income.setDescription(req.getDescription());
+                income.setNotes(req.getNotes());
+                income.setCreatedAt(Instant.now());
+                income.setUpdatedAt(Instant.now());
+                incomeRepository.save(income);
+                response.incrementCreated();
+            } catch (Exception e) {
+                response.addError("Item " + i + " (" + req.getExternalId() + "): " + e.getMessage());
+            }
+        }
+
+        return response;
     }
 }
