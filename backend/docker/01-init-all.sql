@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS income (
     description TEXT,
     notes TEXT,
     reconciled BOOLEAN DEFAULT FALSE,
+    external_id VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -122,8 +123,8 @@ CREATE TABLE IF NOT EXISTS manual_match_income (
 CREATE TABLE IF NOT EXISTS match_suggestions (
     id BIGSERIAL PRIMARY KEY,
     user_id VARCHAR(255) NOT NULL,
-    item_type VARCHAR(10) NOT NULL,
-    item_id BIGINT NOT NULL,
+    expense_id BIGINT,
+    income_id BIGINT,
     transaction_id VARCHAR(255) NOT NULL,
     confidence_score INTEGER NOT NULL,
     match_reasons TEXT,

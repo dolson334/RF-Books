@@ -6,7 +6,8 @@
     "start": "ng serve --port 4201",
     "build": "ng build",
     "build:widget": "ng build --configuration=widget && node scripts/bundle-widget.js",
-    "build:widget-prod": "ng build --configuration=production,widget && node scripts/bundle-widget.js"
+    "build:widget-prod": "ng build --configuration=production,widget && node scripts/bundle-widget.js",
+    "test:e2e": "npx playwright test"
   },
   "dependencies": {
     "@angular/animations": "~19.2.20",
@@ -23,9 +24,10 @@
     "zone.js": "~0.15.1"
   },
   "devDependencies": {
-    "@angular/cli": "^19.2.23",
     "@angular-devkit/build-angular": "^19.2.23",
+    "@angular/cli": "^19.2.23",
     "@angular/compiler-cli": "~19.2.20",
+    "@playwright/test": "^1.59.1",
     "typescript": "~5.7.0"
   }
 }
