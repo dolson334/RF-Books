@@ -12,6 +12,7 @@ import {
 import { ReconciliationService } from './reconciliation.service';
 import { PlaidService } from './plaid.service';
 import { Router } from '@angular/router';
+import { ToastService } from '../shared/toast.service';
 
 @Component({
   selector: 'rf-reconciliation-center',
@@ -72,11 +73,11 @@ export class ReconciliationComponent implements OnInit {
   });
 
   readonly unreconciledExpenses = computed(() =>
-    this.expenses().filter(e => !e.reconciled)
+    this.expenses().filter(e => !e.reconciled && !e.resolved)
   );
 
   readonly unreconciledIncome = computed(() =>
-    this.income().filter(i => !i.reconciled)
+    this.income().filter(i => !i.reconciled && !i.resolved)
   );
 
   readonly reconciledExpenses = computed(() =>
@@ -85,6 +86,14 @@ export class ReconciliationComponent implements OnInit {
 
   readonly reconciledIncome = computed(() =>
     this.income().filter(i => i.reconciled)
+  );
+
+  readonly resolvedExpenses = computed(() =>
+    this.expenses().filter(e => e.resolved && !e.reconciled)
+  );
+
+  readonly resolvedIncome = computed(() =>
+    this.income().filter(i => i.resolved && !i.reconciled)
   );
 
   readonly debitTransactions = computed(() =>
@@ -112,7 +121,8 @@ export class ReconciliationComponent implements OnInit {
   constructor(
     private reconService: ReconciliationService,
     private plaidService: PlaidService,
-    private router: Router
+    private router: Router,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -127,14 +137,14 @@ export class ReconciliationComponent implements OnInit {
   loadExpenses(): void {
     this.reconService.getExpenses().subscribe({
       next: expenses => this.expenses.set(expenses),
-      error: err => console.error('Failed to load expenses', err)
+      error: () => this.toast.error('Failed to load expenses')
     });
   }
 
   loadIncome(): void {
     this.reconService.getIncome().subscribe({
       next: income => this.income.set(income),
-      error: err => console.error('Failed to load income', err)
+      error: () => this.toast.error('Failed to load income')
     });
   }
 
@@ -191,7 +201,7 @@ export class ReconciliationComponent implements OnInit {
 
       this.bankTransactions.set(unmatchedTransactions);
     } catch (err) {
-      console.error('Failed to load bank transactions', err);
+      this.toast.error('Failed to load bank transactions');
     }
   }
 
@@ -257,14 +267,14 @@ export class ReconciliationComponent implements OnInit {
         this.loadBankTransactions();
       },
       error: (err) => {
-        console.error('Failed to run reconciliation', err);
+        this.toast.error('Failed to run reconciliation');
         this.isLoading.set(false);
       }
     });
   }
 
   goToOnboarding(): void {
-    this.router.navigate(['/recon/onboarding']);
+    this.router.navigate(['/onboarding']);
   }
 
   setTab(tab: 'income' | 'expenses'): void {
@@ -287,7 +297,7 @@ export class ReconciliationComponent implements OnInit {
         }
       },
       error: err => {
-        console.error('Auto-match failed', err);
+        this.toast.error('Auto-match failed');
         this.isAutoMatching.set(false);
         this.autoMatchResult.set('Auto-match failed');
       }
@@ -300,7 +310,7 @@ export class ReconciliationComponent implements OnInit {
         this.suggestions.update(list => list.filter(s => s.id !== suggestion.id));
         this.refreshAll();
       },
-      error: err => console.error('Failed to accept suggestion', err)
+      error: () => this.toast.error('Failed to accept suggestion')
     });
   }
 
@@ -309,7 +319,7 @@ export class ReconciliationComponent implements OnInit {
       next: () => {
         this.suggestions.update(list => list.filter(s => s.id !== suggestion.id));
       },
-      error: err => console.error('Failed to reject suggestion', err)
+      error: () => this.toast.error('Failed to reject suggestion')
     });
   }
 
@@ -323,7 +333,7 @@ export class ReconciliationComponent implements OnInit {
         this.refreshAll();
       },
       error: err => {
-        console.error('Failed to accept all', err);
+        this.toast.error('Failed to accept all suggestions');
         this.isAutoMatching.set(false);
       }
     });
@@ -353,7 +363,7 @@ export class ReconciliationComponent implements OnInit {
   unmatchExpense(expenseId: number): void {
     this.reconService.deleteManualExpenseMatch(expenseId).subscribe({
       next: () => this.refreshAll(),
-      error: err => console.error('Failed to unmatch expense', err)
+      error: () => this.toast.error('Failed to unmatch expense')
     });
   }
 
@@ -371,7 +381,7 @@ export class ReconciliationComponent implements OnInit {
         this.refreshAll();
       },
       error: (err) => {
-        console.error('Failed to create expense match', err);
+        this.toast.error('Failed to create expense match');
         this.isMatchingExpense.set(false);
       }
     });
@@ -395,7 +405,7 @@ export class ReconciliationComponent implements OnInit {
   unmatchIncome(incomeId: number): void {
     this.reconService.deleteManualIncomeMatch(incomeId).subscribe({
       next: () => this.refreshAll(),
-      error: err => console.error('Failed to unmatch income', err)
+      error: () => this.toast.error('Failed to unmatch income')
     });
   }
 
@@ -413,7 +423,7 @@ export class ReconciliationComponent implements OnInit {
         this.refreshAll();
       },
       error: (err) => {
-        console.error('Failed to create income match', err);
+        this.toast.error('Failed to create income match');
         this.isMatchingIncome.set(false);
       }
     });
@@ -424,5 +434,33 @@ export class ReconciliationComponent implements OnInit {
     this.loadIncome();
     this.loadBankTransactions();
     this.loadLatestReconciliation();
+  }
+
+  resolveExpense(expense: Expense): void {
+    this.reconService.resolveExpense(expense.id).subscribe({
+      next: () => this.refreshAll(),
+      error: () => this.toast.error('Failed to resolve expense')
+    });
+  }
+
+  unresolveExpense(expense: Expense): void {
+    this.reconService.unresolveExpense(expense.id).subscribe({
+      next: () => this.refreshAll(),
+      error: () => this.toast.error('Failed to unresolve expense')
+    });
+  }
+
+  resolveIncome(income: Income): void {
+    this.reconService.resolveIncome(income.id).subscribe({
+      next: () => this.refreshAll(),
+      error: () => this.toast.error('Failed to resolve income')
+    });
+  }
+
+  unresolveIncome(income: Income): void {
+    this.reconService.unresolveIncome(income.id).subscribe({
+      next: () => this.refreshAll(),
+      error: () => this.toast.error('Failed to unresolve income')
+    });
   }
 }

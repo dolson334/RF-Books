@@ -1,0 +1,194 @@
+<div class="reports-container">
+  <header class="header">
+    <div>
+      <h1 class="title">RF Books · Reports</h1>
+      <p class="subtitle">Profit &amp; Loss and category analysis</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-secondary" (click)="navigateTo('/dashboard')">← Dashboard</button>
+      <button class="btn-primary" (click)="exportCsv()">📥 Export CSV</button>
+    </div>
+  </header>
+
+  <!-- Period Selector -->
+  <div class="period-selector">
+    <div class="period-tabs">
+      <button class="period-tab" [class.active]="periodType() === 'MONTH'" (click)="setPeriod('MONTH')">Month</button>
+      <button class="period-tab" [class.active]="periodType() === 'QUARTER'" (click)="setPeriod('QUARTER')">Quarter</button>
+      <button class="period-tab" [class.active]="periodType() === 'YEAR'" (click)="setPeriod('YEAR')">Year</button>
+    </div>
+    <input type="month" class="date-picker" [value]="currentMonthInput()" (change)="onDateChange($any($event.target).value)" />
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading-overlay">
+      <div class="loader"></div>
+    </div>
+  }
+
+  @if (!isLoading() && summary()) {
+    <!-- P&L Summary -->
+    <section class="pl-section card">
+      <h2 class="section-title">Profit &amp; Loss — {{ summary()!.period }}</h2>
+      <div class="pl-grid">
+        <div class="pl-column">
+          <h3 class="pl-heading income-heading">Income</h3>
+          @for (cat of incomeCategories(); track cat.category; let i = $index) {
+            <div class="pl-row clickable" (click)="drillDown(cat.category, 'income')"
+                 [class.active-drill]="drillCategory() === cat.category && drillType() === 'income'">
+              <span class="pl-dot" [style.background]="getCategoryColor(i)"></span>
+              <span class="pl-category">{{ getCategoryLabel(cat.category, 'income') }}</span>
+              <span class="pl-amount positive">{{ formatCurrency(cat.total) }}</span>
+            </div>
+            <!-- Drill-down -->
+            @if (drillCategory() === cat.category && drillType() === 'income') {
+              <div class="drill-panel">
+                @if (isDrillLoading()) {
+                  <div class="drill-loading">Loading...</div>
+                } @else if (drillItems().length === 0) {
+                  <div class="drill-empty">No transactions</div>
+                } @else {
+                  <table class="drill-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Source</th>
+                        <th>Amount</th>
+                        <th>Reconciled</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of drillItems(); track item.id) {
+                        <tr>
+                          <td>{{ item.incomeDate }}</td>
+                          <td>{{ item.source }}</td>
+                          <td class="positive">{{ formatCurrency(item.amount) }}</td>
+                          <td>{{ item.reconciled ? '✓' : '—' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                }
+              </div>
+            }
+          }
+          <div class="pl-total">
+            <span>Total Income</span>
+            <span class="positive">{{ formatCurrency(summary()!.totalIncome) }}</span>
+          </div>
+        </div>
+
+        <div class="pl-divider"></div>
+
+        <div class="pl-column">
+          <h3 class="pl-heading expense-heading">Expenses</h3>
+          @for (cat of expenseCategories(); track cat.category; let i = $index) {
+            <div class="pl-row clickable" (click)="drillDown(cat.category, 'expense')"
+                 [class.active-drill]="drillCategory() === cat.category && drillType() === 'expense'">
+              <span class="pl-dot" [style.background]="getCategoryColor(i)"></span>
+              <span class="pl-category">{{ getCategoryLabel(cat.category, 'expense') }}</span>
+              <span class="pl-amount negative">{{ formatCurrency(cat.total) }}</span>
+            </div>
+            <!-- Drill-down -->
+            @if (drillCategory() === cat.category && drillType() === 'expense') {
+              <div class="drill-panel">
+                @if (isDrillLoading()) {
+                  <div class="drill-loading">Loading...</div>
+                } @else if (drillItems().length === 0) {
+                  <div class="drill-empty">No transactions</div>
+                } @else {
+                  <table class="drill-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Vendor</th>
+                        <th>Amount</th>
+                        <th>Reconciled</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of drillItems(); track item.id) {
+                        <tr>
+                          <td>{{ item.expenseDate }}</td>
+                          <td>{{ item.vendorName }}</td>
+                          <td class="negative">{{ formatCurrency(item.amount) }}</td>
+                          <td>{{ item.reconciled ? '✓' : '—' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                }
+              </div>
+            }
+          }
+          <div class="pl-total">
+            <span>Total Expenses</span>
+            <span class="negative">{{ formatCurrency(summary()!.totalExpenses) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Net Income -->
+      <div class="net-income-bar" [class.positive-bg]="netPositive()" [class.negative-bg]="!netPositive()">
+        <span class="net-label">Net Income</span>
+        <span class="net-value" [class.positive]="netPositive()" [class.negative]="!netPositive()">
+          {{ formatCurrency(summary()!.netIncome) }}
+        </span>
+      </div>
+    </section>
+
+    <!-- 12-Month Trend -->
+    <section class="card trend-section">
+      <h2 class="section-title">12-Month Trend</h2>
+      @if (monthlyTrend().length > 0) {
+        <div class="trend-chart">
+          <div class="trend-bars">
+            @for (m of monthlyTrend(); track m.month) {
+              <div class="trend-month">
+                <div class="bar-group">
+                  <div class="bar income-bar" [style.height.%]="barHeight(m.income)"
+                       [title]="'Income: ' + formatCurrency(m.income)"></div>
+                  <div class="bar expense-bar" [style.height.%]="barHeight(m.expenses)"
+                       [title]="'Expenses: ' + formatCurrency(m.expenses)"></div>
+                </div>
+                <span class="month-label">{{ formatMonth(m.month) }}</span>
+                <span class="month-net" [class.positive]="m.net >= 0" [class.negative]="m.net < 0">
+                  {{ formatCurrency(m.net) }}
+                </span>
+              </div>
+            }
+          </div>
+          <div class="trend-legend">
+            <span class="legend-item"><span class="legend-dot income-dot"></span> Income</span>
+            <span class="legend-item"><span class="legend-dot expense-dot"></span> Expenses</span>
+          </div>
+        </div>
+      } @else {
+        <p class="empty-state">No trend data available</p>
+      }
+    </section>
+
+    <!-- Reconciliation Stats -->
+    <section class="card stats-section">
+      <h2 class="section-title">Reconciliation Status</h2>
+      <div class="stats-grid">
+        <div class="stat">
+          <span class="stat-value">{{ summary()!.reconciledCount }}</span>
+          <span class="stat-label">Reconciled</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value warn">{{ summary()!.unreconciledCount }}</span>
+          <span class="stat-label">Unreconciled</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">{{ summary()!.reconciliationRate }}%</span>
+          <span class="stat-label">Rate</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">{{ summary()!.incomeCount + summary()!.expenseCount }}</span>
+          <span class="stat-label">Total Transactions</span>
+        </div>
+      </div>
+    </section>
+  }
+</div>

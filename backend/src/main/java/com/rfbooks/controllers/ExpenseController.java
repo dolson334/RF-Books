@@ -1,7 +1,10 @@
 package com.rfbooks.controllers;
 
 import com.rfbooks.dtos.ExpenseRequest;
+import com.rfbooks.dtos.ExpenseImportRequest;
+import com.rfbooks.dtos.IncomeImportResponse;
 import com.rfbooks.entities.Expense;
+import com.rfbooks.enums.CategoryValidator;
 import com.rfbooks.services.ExpenseService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +12,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 @RestController
 @RequestMapping("/api/expenses")
@@ -21,11 +28,29 @@ public class ExpenseController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Expense>> getAllExpenses(
+    public ResponseEntity<?> getAllExpenses(
             @RequestParam(required = false) String resortAlias,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
         
+        if (page != null && size != null) {
+            PageRequest pageReq = PageRequest.of(page, Math.min(size, 200), Sort.by("expenseDate").descending());
+            if (startDate != null && endDate != null) {
+                return ResponseEntity.ok(expenseService.getExpensesByDateRange(startDate, endDate, pageReq));
+            }
+            return ResponseEntity.ok(expenseService.getAllExpenses(pageReq));
+        }
+
+        if (category != null && !category.isEmpty()) {
+            if (startDate != null && endDate != null) {
+                return ResponseEntity.ok(expenseService.getExpensesByDateRangeAndCategory(startDate, endDate, category));
+            }
+            return ResponseEntity.ok(expenseService.getExpensesByCategory(category));
+        }
+
         if (startDate != null && endDate != null) {
             return ResponseEntity.ok(expenseService.getExpensesByDateRange(startDate, endDate));
         }
@@ -42,9 +67,15 @@ public class ExpenseController {
     }
 
     @PostMapping
-    public ResponseEntity<Expense> createExpense(
+    public ResponseEntity<?> createExpense(
             @RequestParam(required = false) String resortAlias,
             @RequestBody ExpenseRequest request) {
+        if (!CategoryValidator.isValidExpenseCategory(request.getCategory())) {
+            return ResponseEntity.badRequest().body("Invalid expense category: " + request.getCategory());
+        }
+        if (!CategoryValidator.isValidPaymentMethod(request.getPaymentMethod())) {
+            return ResponseEntity.badRequest().body("Invalid payment method: " + request.getPaymentMethod());
+        }
         Expense expense = new Expense();
         expense.setExpenseDate(request.getExpenseDate());
         expense.setAmount(request.getAmount());
@@ -61,10 +92,16 @@ public class ExpenseController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Expense> updateExpense(
+    public ResponseEntity<?> updateExpense(
             @RequestParam(required = false) String resortAlias,
             @PathVariable Long id, 
             @RequestBody ExpenseRequest request) {
+        if (!CategoryValidator.isValidExpenseCategory(request.getCategory())) {
+            return ResponseEntity.badRequest().body("Invalid expense category: " + request.getCategory());
+        }
+        if (!CategoryValidator.isValidPaymentMethod(request.getPaymentMethod())) {
+            return ResponseEntity.badRequest().body("Invalid payment method: " + request.getPaymentMethod());
+        }
         Expense expense = new Expense();
         expense.setExpenseDate(request.getExpenseDate());
         expense.setAmount(request.getAmount());
@@ -86,5 +123,27 @@ public class ExpenseController {
             @PathVariable Long id) {
         expenseService.deleteExpense(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/resolve")
+    public ResponseEntity<Expense> resolveExpense(
+            @RequestParam(required = false) String resortAlias,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(expenseService.resolveExpense(id));
+    }
+
+    @DeleteMapping("/{id}/resolve")
+    public ResponseEntity<Expense> unresolveExpense(
+            @RequestParam(required = false) String resortAlias,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(expenseService.unresolveExpense(id));
+    }
+
+    @PostMapping("/import")
+    public ResponseEntity<IncomeImportResponse> importExpenses(
+            @RequestParam(required = false) String resortAlias,
+            @RequestBody List<ExpenseImportRequest> requests) {
+        IncomeImportResponse response = expenseService.importExpenses(requests);
+        return ResponseEntity.ok(response);
     }
 }

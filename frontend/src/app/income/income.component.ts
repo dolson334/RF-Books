@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IncomeService } from './income.service';
 import { Income, INCOME_CATEGORIES, PAYMENT_METHODS } from './income.models';
+import { ToastService } from '../shared/toast.service';
 
 @Component({
   selector: 'rf-income',
@@ -24,7 +25,8 @@ export class IncomeComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private incomeService: IncomeService
+    private incomeService: IncomeService,
+    private toast: ToastService
   ) {
     this.incomeForm = this.fb.group({
       incomeDate: ['', Validators.required],
@@ -49,8 +51,8 @@ export class IncomeComponent implements OnInit {
         this.incomes.set(income);
         this.isLoading.set(false);
       },
-      error: (err) => {
-        console.error('Failed to load income', err);
+      error: () => {
+        this.toast.error('Failed to load income');
         this.isLoading.set(false);
       }
     });
@@ -103,8 +105,8 @@ export class IncomeComponent implements OnInit {
         this.hideForm();
         this.isSaving.set(false);
       },
-      error: (err) => {
-        console.error('Failed to save income', err);
+      error: () => {
+        this.toast.error('Failed to save income');
         this.isSaving.set(false);
       }
     });
@@ -119,8 +121,8 @@ export class IncomeComponent implements OnInit {
       next: () => {
         this.loadIncome();
       },
-      error: (err) => {
-        console.error('Failed to delete income', err);
+      error: () => {
+        this.toast.error('Failed to delete income');
       }
     });
   }

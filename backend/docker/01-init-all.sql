@@ -1,3 +1,10 @@
+-- DEPRECATED: This file is no longer used for Docker initialization.
+-- Schema is now managed by:
+--   - backend/src/main/resources/rfbooks_schema.sql (Docker init)
+--   - backend/src/main/resources/rfbooks_test_data.sql (Docker init test data)
+--   - backend/src/main/resources/db/migration/ (Flyway migrations)
+-- Kept for reference only.
+
 -- RF Books Database Initialization
 -- Creates testresort schema and applies tables + test data
 
@@ -23,6 +30,8 @@ CREATE TABLE IF NOT EXISTS expenses (
     description TEXT,
     notes TEXT,
     reconciled BOOLEAN DEFAULT FALSE,
+    resolved BOOLEAN DEFAULT FALSE,
+    external_id VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -41,6 +50,7 @@ CREATE TABLE IF NOT EXISTS income (
     description TEXT,
     notes TEXT,
     reconciled BOOLEAN DEFAULT FALSE,
+    resolved BOOLEAN DEFAULT FALSE,
     external_id VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -133,6 +143,42 @@ CREATE TABLE IF NOT EXISTS match_suggestions (
     resolved_at TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS chart_of_accounts (
+    id BIGSERIAL PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    account_number VARCHAR(20) NOT NULL,
+    account_name VARCHAR(255) NOT NULL,
+    account_type VARCHAR(20) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, account_number)
+);
+
+CREATE TABLE IF NOT EXISTS products_services (
+    id BIGSERIAL PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    default_price DECIMAL(12, 2),
+    unit_of_measure VARCHAR(50),
+    description TEXT,
+    revenue_account_id BIGINT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS onboarding_progress (
+    id BIGSERIAL PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL UNIQUE,
+    bank_connected BOOLEAN DEFAULT FALSE,
+    chart_of_accounts_created BOOLEAN DEFAULT FALSE,
+    products_services_created BOOLEAN DEFAULT FALSE,
+    completed BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Triggers
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -147,6 +193,12 @@ CREATE TRIGGER update_expenses_updated_at BEFORE UPDATE ON expenses
 CREATE TRIGGER update_income_updated_at BEFORE UPDATE ON income
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_plaid_connections_updated_at BEFORE UPDATE ON plaid_connections
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_chart_of_accounts_updated_at BEFORE UPDATE ON chart_of_accounts
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_products_services_updated_at BEFORE UPDATE ON products_services
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_onboarding_progress_updated_at BEFORE UPDATE ON onboarding_progress
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================

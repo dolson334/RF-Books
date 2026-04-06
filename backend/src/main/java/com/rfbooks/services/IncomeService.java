@@ -5,6 +5,8 @@ import com.rfbooks.dtos.IncomeImportRequest;
 import com.rfbooks.dtos.IncomeImportResponse;
 import com.rfbooks.entities.Income;
 import com.rfbooks.repos.IncomeRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,8 +28,24 @@ public class IncomeService {
         return incomeRepository.findByUserIdOrderByIncomeDateDesc(AuthContext.getCurrentUserId());
     }
 
+    public Page<Income> getAllIncome(Pageable pageable) {
+        return incomeRepository.findByUserId(AuthContext.getCurrentUserId(), pageable);
+    }
+
     public List<Income> getIncomeByDateRange(LocalDate startDate, LocalDate endDate) {
         return incomeRepository.findByUserIdAndDateRange(AuthContext.getCurrentUserId(), startDate, endDate);
+    }
+
+    public List<Income> getIncomeByCategory(String category) {
+        return incomeRepository.findByUserIdAndCategory(AuthContext.getCurrentUserId(), category);
+    }
+
+    public List<Income> getIncomeByDateRangeAndCategory(LocalDate startDate, LocalDate endDate, String category) {
+        return incomeRepository.findByUserIdAndDateRangeAndCategory(AuthContext.getCurrentUserId(), startDate, endDate, category);
+    }
+
+    public Page<Income> getIncomeByDateRange(LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        return incomeRepository.findByUserIdAndDateRange(AuthContext.getCurrentUserId(), startDate, endDate, pageable);
     }
 
     public Optional<Income> getIncomeById(Long id) {
@@ -39,6 +57,26 @@ public class IncomeService {
         income.setCreatedAt(Instant.now());
         income.setUpdatedAt(Instant.now());
         return incomeRepository.save(income);
+    }
+
+    public Income resolveIncome(Long id) {
+        return incomeRepository.findById(id)
+                .map(income -> {
+                    income.setResolved(true);
+                    income.setUpdatedAt(Instant.now());
+                    return incomeRepository.save(income);
+                })
+                .orElseThrow(() -> new RuntimeException("Income not found with id: " + id));
+    }
+
+    public Income unresolveIncome(Long id) {
+        return incomeRepository.findById(id)
+                .map(income -> {
+                    income.setResolved(false);
+                    income.setUpdatedAt(Instant.now());
+                    return incomeRepository.save(income);
+                })
+                .orElseThrow(() -> new RuntimeException("Income not found with id: " + id));
     }
 
     public Income updateIncome(Long id, Income updatedIncome) {

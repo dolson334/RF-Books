@@ -1,3 +1,9 @@
+-- DEPRECATED: This file is no longer used for Docker initialization.
+-- Schema is now managed by:
+--   - backend/src/main/resources/rfbooks_schema.sql (Docker init)
+--   - backend/src/main/resources/db/migration/ (Flyway migrations)
+-- Kept for reference only.
+
 -- RF Books Database Schema
 -- Schema-based multitenancy: This schema will be created in each tenant's schema
 -- Note: search_path should be set before running this script
@@ -20,6 +26,8 @@ CREATE TABLE IF NOT EXISTS expenses (
     description TEXT,
     notes TEXT,
     reconciled BOOLEAN DEFAULT FALSE,
+    resolved BOOLEAN DEFAULT FALSE,
+    external_id VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -27,6 +35,7 @@ CREATE TABLE IF NOT EXISTS expenses (
 CREATE INDEX IF NOT EXISTS idx_expenses_user_id ON expenses(user_id);
 CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(expense_date);
 CREATE INDEX IF NOT EXISTS idx_expenses_reconciled ON expenses(reconciled);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_expenses_user_external_id ON expenses(user_id, external_id) WHERE external_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS income (
     id BIGSERIAL PRIMARY KEY,
@@ -42,6 +51,7 @@ CREATE TABLE IF NOT EXISTS income (
     description TEXT,
     notes TEXT,
     reconciled BOOLEAN DEFAULT FALSE,
+    resolved BOOLEAN DEFAULT FALSE,
     external_id VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -168,6 +178,50 @@ CREATE TABLE IF NOT EXISTS match_suggestions (
 CREATE INDEX IF NOT EXISTS idx_suggestions_user ON match_suggestions(user_id, status);
 
 -- ============================================
+-- ONBOARDING TABLES
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS chart_of_accounts (
+    id BIGSERIAL PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    account_number VARCHAR(20) NOT NULL,
+    account_name VARCHAR(255) NOT NULL,
+    account_type VARCHAR(20) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, account_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_coa_user_id ON chart_of_accounts(user_id);
+
+CREATE TABLE IF NOT EXISTS products_services (
+    id BIGSERIAL PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    default_price DECIMAL(12, 2),
+    unit_of_measure VARCHAR(50),
+    description TEXT,
+    revenue_account_id BIGINT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_ps_user_id ON products_services(user_id);
+
+CREATE TABLE IF NOT EXISTS onboarding_progress (
+    id BIGSERIAL PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL UNIQUE,
+    bank_connected BOOLEAN DEFAULT FALSE,
+    chart_of_accounts_created BOOLEAN DEFAULT FALSE,
+    products_services_created BOOLEAN DEFAULT FALSE,
+    completed BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
 -- TRIGGERS FOR UPDATED_AT
 -- ============================================
 
@@ -191,6 +245,18 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_plaid_connections_updated_at') THEN
         CREATE TRIGGER update_plaid_connections_updated_at BEFORE UPDATE ON plaid_connections
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_chart_of_accounts_updated_at') THEN
+        CREATE TRIGGER update_chart_of_accounts_updated_at BEFORE UPDATE ON chart_of_accounts
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_products_services_updated_at') THEN
+        CREATE TRIGGER update_products_services_updated_at BEFORE UPDATE ON products_services
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_onboarding_progress_updated_at') THEN
+        CREATE TRIGGER update_onboarding_progress_updated_at BEFORE UPDATE ON onboarding_progress
             FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
     END IF;
 END $$;

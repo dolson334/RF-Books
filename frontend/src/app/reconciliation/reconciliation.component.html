@@ -157,6 +157,11 @@
         (click)="showMatched.set(true)">
         Matched ({{ reconciledExpenses().length }})
       </button>
+      @if (resolvedExpenses().length > 0) {
+        <span style="margin-left: 0.5rem; font-size: 0.85rem; color: #6b7280; align-self: center;">
+          {{ resolvedExpenses().length }} resolved
+        </span>
+      }
     </div>
 
     <!-- Match Button -->
@@ -196,6 +201,8 @@
                   <th>Reference</th>
                   @if (showMatched()) {
                     <th>Actions</th>
+                  } @else {
+                    <th></th>
                   }
                 </tr>
               </thead>
@@ -216,6 +223,15 @@
                           class="btn-link" 
                           (click)="unmatchExpense(expense.id)">
                           Unmatch
+                        </button>
+                      </td>
+                    } @else {
+                      <td>
+                        <button 
+                          class="btn-link"
+                          title="Mark as reviewed without matching"
+                          (click)="resolveExpense(expense); $event.stopPropagation()">
+                          Resolve
                         </button>
                       </td>
                     }
@@ -285,6 +301,11 @@
         (click)="showMatched.set(true)">
         Matched ({{ reconciledIncome().length }})
       </button>
+      @if (resolvedIncome().length > 0) {
+        <span style="margin-left: 0.5rem; font-size: 0.85rem; color: #6b7280; align-self: center;">
+          {{ resolvedIncome().length }} resolved
+        </span>
+      }
     </div>
 
     <!-- Match Button -->
@@ -324,6 +345,8 @@
                   <th>Reference</th>
                   @if (showMatched()) {
                     <th>Actions</th>
+                  } @else {
+                    <th></th>
                   }
                 </tr>
               </thead>
@@ -344,6 +367,15 @@
                           class="btn-link" 
                           (click)="unmatchIncome(income.id)">
                           Unmatch
+                        </button>
+                      </td>
+                    } @else {
+                      <td>
+                        <button 
+                          class="btn-link"
+                          title="Mark as reviewed without matching"
+                          (click)="resolveIncome(income); $event.stopPropagation()">
+                          Resolve
                         </button>
                       </td>
                     }

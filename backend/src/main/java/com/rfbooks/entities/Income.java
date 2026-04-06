@@ -48,6 +48,9 @@ public class Income {
     @Column(name = "reconciled")
     private Boolean reconciled;
 
+    @Column(name = "resolved")
+    private Boolean resolved;
+
     @Column(name = "external_id")
     private String externalId;
 
@@ -62,6 +65,7 @@ public class Income {
         this.updatedAt = Instant.now();
         this.currency = "USD";
         this.reconciled = false;
+        this.resolved = false;
     }
 
     // Getters and setters
@@ -183,6 +187,14 @@ public class Income {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Boolean getResolved() {
+        return resolved;
+    }
+
+    public void setResolved(Boolean resolved) {
+        this.resolved = resolved;
     }
 
     public String getExternalId() {

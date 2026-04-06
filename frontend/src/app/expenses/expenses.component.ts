@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ExpenseService } from './expense.service';
 import { Expense, EXPENSE_CATEGORIES, PAYMENT_METHODS } from './expense.models';
+import { ToastService } from '../shared/toast.service';
 
 @Component({
   selector: 'rf-expenses',
@@ -24,7 +25,8 @@ export class ExpensesComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private expenseService: ExpenseService
+    private expenseService: ExpenseService,
+    private toast: ToastService
   ) {
     this.expenseForm = this.fb.group({
       expenseDate: ['', Validators.required],
@@ -49,8 +51,8 @@ export class ExpensesComponent implements OnInit {
         this.expenses.set(expenses);
         this.isLoading.set(false);
       },
-      error: (err) => {
-        console.error('Failed to load expenses', err);
+      error: () => {
+        this.toast.error('Failed to load expenses');
         this.isLoading.set(false);
       }
     });
@@ -103,8 +105,8 @@ export class ExpensesComponent implements OnInit {
         this.hideForm();
         this.isSaving.set(false);
       },
-      error: (err) => {
-        console.error('Failed to save expense', err);
+      error: () => {
+        this.toast.error('Failed to save expense');
         this.isSaving.set(false);
       }
     });
@@ -119,8 +121,8 @@ export class ExpensesComponent implements OnInit {
       next: () => {
         this.loadExpenses();
       },
-      error: (err) => {
-        console.error('Failed to delete expense', err);
+      error: () => {
+        this.toast.error('Failed to delete expense');
       }
     });
   }

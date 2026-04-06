@@ -3,6 +3,7 @@ package com.rfbooks.controllers;
 import com.rfbooks.config.AuthContext;
 import com.rfbooks.entities.PlaidTransactionEntity;
 import com.rfbooks.repos.*;
+import com.rfbooks.services.PlaidService;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,11 @@ public class TestSeedController {
     private final ManualMatchIncomeRepository manualMatchIncomeRepository;
     private final MatchSuggestionRepository matchSuggestionRepository;
     private final ReconciliationRunRepository reconciliationRunRepository;
+    private final PlaidConnectionRepository plaidConnectionRepository;
+    private final ChartOfAccountRepository chartOfAccountRepository;
+    private final ProductServiceRepository productServiceRepository;
+    private final OnboardingProgressRepository onboardingProgressRepository;
+    private final PlaidService plaidService;
 
     public TestSeedController(PlaidTransactionRepository plaidTransactionRepository,
                                IncomeRepository incomeRepository,
@@ -29,7 +35,12 @@ public class TestSeedController {
                                ManualMatchExpenseRepository manualMatchExpenseRepository,
                                ManualMatchIncomeRepository manualMatchIncomeRepository,
                                MatchSuggestionRepository matchSuggestionRepository,
-                               ReconciliationRunRepository reconciliationRunRepository) {
+                               ReconciliationRunRepository reconciliationRunRepository,
+                               PlaidConnectionRepository plaidConnectionRepository,
+                               ChartOfAccountRepository chartOfAccountRepository,
+                               ProductServiceRepository productServiceRepository,
+                               OnboardingProgressRepository onboardingProgressRepository,
+                               PlaidService plaidService) {
         this.plaidTransactionRepository = plaidTransactionRepository;
         this.incomeRepository = incomeRepository;
         this.expenseRepository = expenseRepository;
@@ -37,6 +48,11 @@ public class TestSeedController {
         this.manualMatchIncomeRepository = manualMatchIncomeRepository;
         this.matchSuggestionRepository = matchSuggestionRepository;
         this.reconciliationRunRepository = reconciliationRunRepository;
+        this.plaidConnectionRepository = plaidConnectionRepository;
+        this.chartOfAccountRepository = chartOfAccountRepository;
+        this.productServiceRepository = productServiceRepository;
+        this.onboardingProgressRepository = onboardingProgressRepository;
+        this.plaidService = plaidService;
     }
 
     @PostMapping("/seed-bank-transaction")
@@ -60,6 +76,17 @@ public class TestSeedController {
         ));
     }
 
+    /**
+     * Creates a Plaid sandbox public token for E2E testing.
+     * This allows tests to complete the full Plaid connection flow
+     * without the Link UI.
+     */
+    @PostMapping("/plaid-sandbox-token")
+    public ResponseEntity<Map<String, String>> createSandboxToken() {
+        String publicToken = plaidService.createSandboxPublicToken();
+        return ResponseEntity.ok(Map.of("publicToken", publicToken));
+    }
+
     @PostMapping("/cleanup")
     public ResponseEntity<Void> cleanup() {
         matchSuggestionRepository.deleteAll();
@@ -69,6 +96,10 @@ public class TestSeedController {
         plaidTransactionRepository.deleteAll();
         incomeRepository.deleteAll();
         expenseRepository.deleteAll();
+        plaidConnectionRepository.deleteAll();
+        chartOfAccountRepository.deleteAll();
+        productServiceRepository.deleteAll();
+        onboardingProgressRepository.deleteAll();
         return ResponseEntity.ok().build();
     }
 }

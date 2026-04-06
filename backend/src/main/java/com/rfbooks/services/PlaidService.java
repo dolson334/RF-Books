@@ -300,6 +300,32 @@ public class PlaidService {
                 });
     }
 
+    /**
+     * Creates a sandbox public token for E2E testing.
+     * Uses Plaid's sandbox/public_token/create endpoint with a test institution.
+     */
+    public String createSandboxPublicToken() {
+        try {
+            SandboxPublicTokenCreateRequest request = new SandboxPublicTokenCreateRequest()
+                    .clientId(clientId)
+                    .secret(secret)
+                    .institutionId("ins_109508")
+                    .initialProducts(Arrays.asList(Products.TRANSACTIONS));
+
+            retrofit2.Response<SandboxPublicTokenCreateResponse> response =
+                    plaidClient.sandboxPublicTokenCreate(request).execute();
+
+            if (response.isSuccessful() && response.body() != null) {
+                return response.body().getPublicToken();
+            } else {
+                throw new RuntimeException("Failed to create sandbox token: " +
+                                           response.errorBody().string());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error creating sandbox token", e);
+        }
+    }
+
     private PlaidTransactionEntity mapToEntity(Transaction tx, String userId) {
         PlaidTransactionEntity entity = new PlaidTransactionEntity();
         entity.setUserId(userId);

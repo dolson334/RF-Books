@@ -1,0 +1,230 @@
+<div class="onboarding-container">
+  <div class="wizard-header">
+    <h1>Setup Your Books</h1>
+    <p class="subtitle">Let's get your resort accounting up and running</p>
+  </div>
+
+  <!-- Step Indicator -->
+  <div class="step-indicator">
+    @for (step of steps; track step; let i = $index) {
+      <div class="step" [class.active]="currentStep() === i + 1"
+           [class.completed]="currentStep() > i + 1"
+           (click)="goToStep(i + 1)">
+        <div class="step-number">
+          @if (currentStep() > i + 1) {
+            <span class="check">✓</span>
+          } @else {
+            {{ i + 1 }}
+          }
+        </div>
+        <span class="step-label">{{ step }}</span>
+      </div>
+      @if (i < steps.length - 1) {
+        <div class="step-line" [class.completed]="currentStep() > i + 1"></div>
+      }
+    }
+  </div>
+
+  <!-- Loading -->
+  @if (isLoading()) {
+    <div class="loading-overlay">
+      <div class="spinner"></div>
+    </div>
+  }
+
+  <!-- Step 1: Connect Bank -->
+  @if (currentStep() === 1) {
+    <div class="step-content">
+      <div class="step-card">
+        <div class="step-card-header">
+          <h2>🏦 Connect Your Bank</h2>
+          <p>Link your bank account to automatically import transactions for reconciliation.</p>
+        </div>
+
+        @if (bankConnected()) {
+          <div class="success-banner">
+            <span class="success-icon">✓</span>
+            <span>Bank account connected successfully!</span>
+          </div>
+        } @else {
+          <div class="bank-action">
+            <button class="btn btn-primary btn-lg" (click)="launchPlaid()" [disabled]="!plaidReady()">
+              @if (!plaidReady()) {
+                Loading Plaid...
+              } @else {
+                Connect Bank Account
+              }
+            </button>
+          </div>
+        }
+
+        <div class="step-actions">
+          @if (!bankConnected()) {
+            <button class="btn btn-ghost" (click)="skipBank()">Skip for now →</button>
+          }
+          <button class="btn btn-primary" (click)="nextStep()">
+            {{ bankConnected() ? 'Continue →' : '' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Step 2: Chart of Accounts -->
+  @if (currentStep() === 2) {
+    <div class="step-content">
+      <div class="step-card">
+        <div class="step-card-header">
+          <h2>📊 Chart of Accounts</h2>
+          <p>We've pre-loaded accounts common for resort businesses. Add, edit, or remove as needed.</p>
+        </div>
+
+        <div class="accounts-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Number</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Description</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (account of accounts(); track account.accountNumber; let i = $index) {
+                <tr>
+                  <td class="mono">{{ account.accountNumber }}</td>
+                  <td>{{ account.accountName }}</td>
+                  <td><span class="badge" [attr.data-type]="account.accountType">{{ account.accountType }}</span></td>
+                  <td class="desc">{{ account.description }}</td>
+                  <td>
+                    <button class="btn-icon btn-remove" (click)="removeAccount(i)" title="Remove">×</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Add Account Form -->
+        <div class="inline-form">
+          <input type="text" placeholder="Number" [(ngModel)]="newAccount.accountNumber" class="input-sm" />
+          <input type="text" placeholder="Account Name" [(ngModel)]="newAccount.accountName" class="input-md" />
+          <select [(ngModel)]="newAccount.accountType" class="input-sm">
+            <option value="ASSET">Asset</option>
+            <option value="LIABILITY">Liability</option>
+            <option value="EQUITY">Equity</option>
+            <option value="REVENUE">Revenue</option>
+            <option value="EXPENSE">Expense</option>
+          </select>
+          <input type="text" placeholder="Description" [(ngModel)]="newAccount.description" class="input-md" />
+          <button class="btn btn-secondary btn-sm" (click)="addAccount()">+ Add</button>
+        </div>
+
+        <div class="step-actions">
+          <button class="btn btn-ghost" (click)="prevStep()">← Back</button>
+          <button class="btn btn-primary" (click)="saveAccounts()">Save & Continue →</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Step 3: Products & Services -->
+  @if (currentStep() === 3) {
+    <div class="step-content">
+      <div class="step-card">
+        <div class="step-card-header">
+          <h2>🛎️ Products & Services</h2>
+          <p>Define what your resort offers — rooms, meals, activities, merchandise, etc.</p>
+        </div>
+
+        @if (products().length > 0) {
+          <div class="accounts-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Price</th>
+                  <th>Unit</th>
+                  <th>Description</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (product of products(); track product.name; let i = $index) {
+                  <tr>
+                    <td>{{ product.name }}</td>
+                    <td><span class="badge" [attr.data-type]="product.type">{{ product.type }}</span></td>
+                    <td class="mono">{{ product.defaultPrice ? ('$' + product.defaultPrice.toFixed(2)) : '—' }}</td>
+                    <td>{{ product.unitOfMeasure || '—' }}</td>
+                    <td class="desc">{{ product.description || '—' }}</td>
+                    <td>
+                      <button class="btn-icon btn-remove" (click)="removeProduct(i)" title="Remove">×</button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty-state">
+            <p>No products or services added yet. Add items your resort offers.</p>
+          </div>
+        }
+
+        <!-- Add Product Form -->
+        <div class="inline-form">
+          <input type="text" placeholder="Name" [(ngModel)]="newProduct.name" class="input-md" />
+          <select [(ngModel)]="newProduct.type" class="input-sm">
+            <option value="SERVICE">Service</option>
+            <option value="PRODUCT">Product</option>
+          </select>
+          <input type="number" placeholder="Price" [(ngModel)]="newProduct.defaultPrice" class="input-sm" />
+          <input type="text" placeholder="Unit (e.g., night)" [(ngModel)]="newProduct.unitOfMeasure" class="input-sm" />
+          <input type="text" placeholder="Description" [(ngModel)]="newProduct.description" class="input-md" />
+          <button class="btn btn-secondary btn-sm" (click)="addProduct()">+ Add</button>
+        </div>
+
+        <div class="step-actions">
+          <button class="btn btn-ghost" (click)="prevStep()">← Back</button>
+          <div>
+            <button class="btn btn-ghost" (click)="skipProducts()" style="margin-right: 0.5rem;">Skip</button>
+            <button class="btn btn-primary" (click)="saveProducts()">Save & Continue →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Step 4: Complete -->
+  @if (currentStep() === 4) {
+    <div class="step-content">
+      <div class="step-card completion-card">
+        <div class="completion-icon">🎉</div>
+        <h2>You're All Set!</h2>
+        <p class="completion-text">Your resort books are ready to go. Here's a summary of what's been configured:</p>
+
+        <div class="summary-grid">
+          <div class="summary-item" [class.done]="stepStatus().bankDone">
+            <span class="summary-icon">{{ stepStatus().bankDone ? '✓' : '○' }}</span>
+            <span>Bank Connection</span>
+          </div>
+          <div class="summary-item" [class.done]="stepStatus().accountsDone">
+            <span class="summary-icon">{{ stepStatus().accountsDone ? '✓' : '○' }}</span>
+            <span>Chart of Accounts ({{ accounts().length }} accounts)</span>
+          </div>
+          <div class="summary-item" [class.done]="stepStatus().productsDone">
+            <span class="summary-icon">{{ stepStatus().productsDone ? '✓' : '○' }}</span>
+            <span>Products & Services ({{ products().length }} items)</span>
+          </div>
+        </div>
+
+        <div class="step-actions centered">
+          <button class="btn btn-ghost" (click)="prevStep()">← Go Back</button>
+          <button class="btn btn-primary btn-lg" (click)="finishOnboarding()">Go to Dashboard →</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

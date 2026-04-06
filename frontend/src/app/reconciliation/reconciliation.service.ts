@@ -78,4 +78,20 @@ export class ReconciliationService {
   getManualIncomeMatches(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/matches/income`);
   }
+
+  resolveExpense(id: number): Observable<Expense> {
+    return this.http.put<Expense>(`${this.expenseUrl}/${id}/resolve`, {});
+  }
+
+  unresolveExpense(id: number): Observable<Expense> {
+    return this.http.delete<Expense>(`${this.expenseUrl}/${id}/resolve`);
+  }
+
+  resolveIncome(id: number): Observable<Income> {
+    return this.http.put<Income>(`${this.incomeUrl}/${id}/resolve`, {});
+  }
+
+  unresolveIncome(id: number): Observable<Income> {
+    return this.http.delete<Income>(`${this.incomeUrl}/${id}/resolve`);
+  }
 }

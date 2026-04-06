@@ -11,6 +11,7 @@ export interface Expense {
   referenceNumber?: string;
   description?: string;
   reconciled: boolean;
+  resolved?: boolean;
 }
 
 export interface Income {
@@ -23,6 +24,7 @@ export interface Income {
   referenceNumber?: string;
   description?: string;
   reconciled: boolean;
+  resolved?: boolean;
 }
 
 export type ReconciliationStatus =

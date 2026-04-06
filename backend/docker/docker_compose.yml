@@ -2,7 +2,7 @@ name: rf-books
 
 services:
   postgres:
-    image: postgres:15
+    image: postgres:15-alpine
     container_name: rfbooks-postgres
     environment:
       POSTGRES_DB: rfbooks
@@ -12,9 +12,20 @@ services:
       - "5433:5432"
     volumes:
       - rfbooks-data:/var/lib/postgresql/data
-      - ./01-init-all.sql:/docker-entrypoint-initdb.d/01-init-all.sql
+      - ../src/main/resources/rfbooks_schema.sql:/docker-entrypoint-initdb.d/01-rfbooks-schema.sql:ro
+      - ../src/main/resources/rfbooks_test_data.sql:/docker-entrypoint-initdb.d/02-rfbooks-test-data.sql:ro
     networks:
       - rfbooks-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d rfbooks"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   rfbooks-data:
